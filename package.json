@@ -1,0 +1,16 @@
+{
+	"name": "data-mining-project",
+	"version": "0.0.1",
+	"description": "Projet de Data Mining (M1S2)",
+	"scripts": {
+		"start": "node main.js"
+	},
+	"dependencies": {
+		"eslint": "^5.15.3"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/aliegeois/data-mining-project.git"
+	},
+	"private": true
+}
