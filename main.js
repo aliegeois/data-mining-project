@@ -110,7 +110,42 @@ function main() {
 
 	
 
-	console.log(positions.get('fr'));
+	//console.log(positions.get('fr'));
+
+	let timesAppeared = timeAppeared(positions);
+
+	console.log(timesAppeared);
 }
 
 main();
+
+/**
+ * Key 1 : nom de la playlist
+ * Key 2 : url de la chanson
+ * Value finale : list des positions d'une chanson pour une playlist
+ * @param {Map<string, Map<string, number[]>>} songs
+ * Key 1 : nom de la playlist
+ * Key 2 : url de la chanson
+ * Value finale : temps pendant laquelle la chanson est apparue dans la playlist (nombre de semaines)
+ * @returns {Map<string, Map<string, number>>}
+ */
+function timeAppeared(songs) {
+
+	let times = new Map();
+
+	// Pour chaque playlist
+	songs.forEach((value, key) => {
+		let timesPlaylist = new Map();
+
+		// Pour chaque chanson dans la playlist value
+		value.forEach((value, key) => {
+			timeURL = value.length;
+			timesPlaylist[key] = timeURL;
+		});
+
+		times[key] = timesPlaylist;
+	});
+
+	return times;
+
+}
