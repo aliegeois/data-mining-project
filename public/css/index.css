@@ -1,0 +1,18 @@
+h3 {
+    text-align: center;
+}
+#requests {
+    text-align: center;
+}
+#requests a {
+    margin: 2%;
+}
+
+#description, #result {
+    margin-left: 10%;
+    margin-right: 10%; 
+    text-align: center;
+}
+#description {
+    font-size: 20px;
+}

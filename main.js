@@ -1,14 +1,31 @@
-const fs = require('fs');
+const fs = require('fs'),
+	express = require('express'),
+	app = express(),
+	port = 8080;
 
 function removeQuotes(data) { // Gère les guillemets
 	let clean = '',
 		string = false,
+		unicode = -1,
+		str_unicode = '',
 		escaped = false;
 	for(let ch of data) {
 		if(string) {
-			if(escaped) {
-				clean += ch;
-				escaped = false;
+			if(unicode !== -1) {
+				if(unicode === 3) {
+					clean += String.fromCharCode(parseInt(str_unicode, 16));
+					unicode = -1;
+				} else {
+					str_unicode += ch;
+					unicode++;
+				}
+			} else if(escaped) {
+				if(ch === 'u') {
+					unicode = 0;
+				} else {
+					clean += ch;
+					escaped = false;
+				}
 			} else if(ch === '\\') {
 				escaped = true;
 			} else if(ch === '"') {
@@ -104,7 +121,6 @@ function getIsTop15(positions) {
 	return isTop15;
 }
 
-
 /**
  * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine 2.1 3ème tiret
  * Key 1 : nom de la playlist
@@ -136,7 +152,6 @@ function getTimeAppeared(positions) {
 	return times;
 
 }
-
 
 /**
  * Indicateur binaire n°1 2.1, 2ème tiret
@@ -178,17 +193,20 @@ function getMeanPosition(positions) {
 	return meanPositions;
 }
 
-function main() {
+function parseData() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
 	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
 	raw_playlists.pop(); // La dernière ligne est vide, il faut la supprimer
 	raw_tracks.pop();
 
 	/** @type {{position: number[], title: string[], artists: string[], url: string[], date: Date[], playlist: string[]}} */
-	let playlists = {},
-		playlist_headers = raw_playlists[0].split('\t'), // On supprime les guillemets des headers
-		tracks = {},
-		tracks_headers = raw_tracks[0].split('\t');
+	let playlists = {};
+	/** @type {string[]} */
+	let playlist_headers = raw_playlists[0].split('\t'); // On supprime les guillemets des headers
+	//** @type {{url: string, BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}} */
+	let tracks = {};
+	/** @type {string[]} */
+	let tracks_headers = raw_tracks[0].split('\t');
 
 	for(let header of playlist_headers)
 		playlists[header] = [];
@@ -218,19 +236,21 @@ function main() {
 
 	for(let i = 1; i < raw_tracks.length; i++) {
 		let line = raw_tracks[i].split('\t');
+		/** @type {{BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}} */
+		let value = {};
 		for(let j = 0; j < line.length; j++) {
-			let value;
+			let column;
 			switch(tracks_headers[j]) {
 			case 'BPM':
-				value = parseInt(line[j]);
+				column = parseInt(line[j]);
 				break;
 			case 'Mode':
 				if(line[j] === 'Major')
-					value = true;
+					column = true;
 				else if(line[j] === 'Minor')
-					value = false;
+					column = false;
 				else
-					value = null;
+					column = null;
 				break;
 			case 'Danceability':
 			case 'Valence':
@@ -239,22 +259,34 @@ function main() {
 			case 'Instrumentalness':
 			case 'Liveness':
 			case 'Speechiness':
-				value = parseInt(line[j]) / 100;
+				column = parseInt(line[j]) / 100;
 				break;
 			default:
-				value = line[j];
+				column = line[j];
 			}
-			tracks[tracks_headers[j]].push(value);
+			value[tracks_headers[j]] = column;
+			// tracks[tracks_headers[j]].push(value);
 		}
+		tracks[line[0]] = value;
 	}
-	
-	/* A partir de là, on a le tableau des positions bien formé */
-	let positions = getPositions(playlists);
-	let isTop15 = getIsTop15(positions);
-	let timeAppeared = getTimeAppeared(positions);
-	let meanPositions = getMeanPosition(positions);
-	console.log(meanPositions);
+
+	console.log(playlists);
+
+	return { playlists, playlist_headers, tracks, tracks_headers };
 }
 
-main();
+let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
+/* A partir de là, on a le tableau des positions bien formé */
+let positions = getPositions(playlists);
+let isTop15 = getIsTop15(positions);
+let timeAppeared = getTimeAppeared(positions);
+let meanPositions = getMeanPosition(positions);
+//console.log(meanPositions);
+
+app.use(express.static('public'));
+
+app.get('/playlists', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+
+});

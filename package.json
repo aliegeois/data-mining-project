@@ -6,7 +6,8 @@
 		"start": "node main.js"
 	},
 	"dependencies": {
-		"eslint": "^5.15.3"
+		"eslint": "^5.15.3",
+		"express": "^4.16.4"
 	},
 	"repository": {
 		"type": "git",
