@@ -97,9 +97,8 @@ function getIsTop15(positions) {
 			isTop15.set(playlist_name, myMap);
 		}
 		
-		for(let [url, pos_array] of song) {
+		for(let [url, pos_array] of song)
 			myMap.set(url, Math.min(...pos_array) < 15); // La position-pic est-elle inférieure à 15 ?
-		}
 	}
 
 	return isTop15;
@@ -111,6 +110,7 @@ function main() {
 	raw_playlists.pop(); // La dernière ligne est vide, il faut la supprimer
 	raw_tracks.pop();
 
+	/** @type {{position: number[], title: string[], artists: string[], url: string[], date: Date[], playlist: string[]}} */
 	let playlists = {},
 		playlist_headers = raw_playlists[0].split('\t'), // On supprime les guillemets des headers
 		tracks = {},
@@ -126,14 +126,52 @@ function main() {
 	
 	for(let i = 1; i < raw_playlists.length; i++) {
 		let line = raw_playlists[i].split('\t');
-		for(let j = 0; j < line.length; j++)
-			playlists[playlist_headers[j]].push(line[j]); // Enlever les guillemets
+		for(let j = 0; j < line.length; j++) {
+			let value;
+			switch(playlist_headers[j]) {
+			case 'position':
+				value = parseInt(line[j]); // On convertit en int
+				break;
+			case 'date':
+				value = new Date(line[j]); // On convertit en date
+				break;
+			default:
+				value = line[j]; // On ne convertit pas
+			}
+			playlists[playlist_headers[j]].push(value);
+		}
 	}
 
 	for(let i = 1; i < raw_tracks.length; i++) {
 		let line = raw_tracks[i].split('\t');
-		for(let j = 0; j < line.length; j++)
-			tracks[tracks_headers[j]].push(line[j]);
+		for(let j = 0; j < line.length; j++) {
+			let value;
+			switch(tracks_headers[j]) {
+			case 'BPM':
+				value = parseInt(line[j]);
+				break;
+			case 'Mode':
+				if(line[j] === 'Major')
+					value = true;
+				else if(line[j] === 'Minor')
+					value = false;
+				else
+					value = null;
+				break;
+			case 'Danceability':
+			case 'Valence':
+			case 'Energy':
+			case 'Acousticness':
+			case 'Instrumentalness':
+			case 'Liveness':
+			case 'Speechiness':
+				value = parseInt(line[j]) / 100;
+				break;
+			default:
+				value = line[j];
+			}
+			tracks[tracks_headers[j]].push(value);
+		}
 	}
 	
 	let positions = getPositions(playlists);
