@@ -147,7 +147,8 @@ function getIsTop15(positions) {
 }
 
 /**
- * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine 2.1 3ème tiret
+ * 2.1 3ème tiret
+ * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine
  * Data est un object js pouvant être envisagé comme une Map avec pour clé une string (le nom de la playlist), et comme valeur une map
  * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
  * ses positions...
@@ -165,25 +166,13 @@ function getTimeAppeared(data) {
 		times[playlist] = times_playlistSpecific;
 	}
 
-	// Pour chaque playlist
-	// positions.forEach((value, key) => {
-	// 	let timesPlaylist = new Map();
-
-	// 	// Pour chaque chanson dans la playlist value
-	// 	value.forEach((value, key) => {
-	// 		let timeURL = value.length;
-	// 		timesPlaylist[key] = timeURL;
-	// 	});
-
-	// 	times[key] = timesPlaylist;
-	// });
-
 	return times;
 
 }
 
 /**
- * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine 2.1 3ème tiret
+ * 2.1 4ème tiret
+ * Position moyenne de la chanson pendant qu'elle était dans la playlist
  * Data est un object js pouvant être envisagé comme une Map avec pour clé une string (le nom de la playlist), et comme valeur une map
  * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
  * ses positions...
@@ -214,6 +203,36 @@ function getMeanPosition(data) {
 
 	return meanPositions;
 }
+
+
+/**
+ * Indication de si la chanson a une position moyenne infèrieure à 15.
+ * Le paramètre est un object pouvant être vu comme une map avec comme key
+ * le nom de la playlist et comme value une map avec comme key l'url de la
+ * chanson et comme valeur la position moyenne. C'est ce qui nous est renvoyé
+ * par la fonction getMeanPosition
+ * @param {Object} data 
+ */
+function getMeanPosInf15(meanPos) {
+
+	let meanPosInf15 = {};
+	for(let [playlist_name, song] of Object.entries(meanPos)) {
+		let meanPosInf15_playlistSpecific = {};
+		for( let [song_url, mean] of Object.entries(song)) {
+			if(mean < 15) {
+				meanPosInf15_playlistSpecific[song_url] = true;
+			} else {
+				meanPosInf15_playlistSpecific[song_url] = false;
+			}
+		}
+		meanPosInf15[playlist_name] = meanPosInf15_playlistSpecific;
+	}
+	return meanPosInf15;
+}
+
+
+
+
 
 function parseData() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
@@ -391,13 +410,13 @@ function parseData2() {
 
 // let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
-/* A partir de là, on a le tableau des positions bien formé */
 let data = parseData2();
 let positions = getPositions2(data);
 let isTop15 = getIsTop15(positions);
 let timeAppeared = getTimeAppeared(data);
 let meanPositions = getMeanPosition(data);
-console.log(meanPositions);
+let meanPosInf15 = getMeanPosInf15(meanPositions);
+console.log(meanPosInf15);
 
 app.use(express.static('public'));
 
