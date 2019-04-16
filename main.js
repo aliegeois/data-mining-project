@@ -169,10 +169,6 @@ function getIsTop15(positions) {
  * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
  * ses positions...
  * @param {Object} data
- * Key 1 : nom de la playlist
- * Key 2 : url de la chanson
- * Value finale : temps pendant laquelle la chanson est apparue dans la playlist (nombre de semaines)
- * @returns {Map<string, Map<string, number>>}
  */
 function getTimeAppeared(data) {
 
@@ -204,43 +200,31 @@ function getTimeAppeared(data) {
 }
 
 /**
- * Indicateur binaire n°1 2.1, 2ème tiret
- * Key 1 : nom de la playlist
- * Key 2 : url de la chanson
- * Value finale : list des positions d'une chanson pour une playlist
- * @param {Map<string, Map<string, number[]>>} positions 
+ * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine 2.1 3ème tiret
+ * Data est un object js pouvant être envisagé comme une Map avec pour clé une string (le nom de la playlist), et comme valeur une map
+ * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
+ * ses positions...
+ * @param {Object} data
  */
-function getMeanPosition(positions) {
-	/**
-	 * Key 1: nom de la playlist
-	 * Key 2: nom de la chanson
-	 * Value 2: la valeur moyenne ?
-	 * @type {Map<string, Map<string, boolean>>}
-	 */
+function getMeanPosition(data) {
+	
+	let means = {};
 
-	let meanPositions = new Map();
-	for(let [playlist_name, song] of positions) {
-		/** @type {Map<string, boolean>} */
-		let myMap;
-		if(meanPositions.has(playlist_name)) {
-			myMap = meanPositions.get(playlist_name);
-		} else {
-			myMap = new Map();
-			meanPositions.set(playlist_name, myMap);
-		}
-		
-		for(let [url, pos_array] of song) {
-			// On fait la moyenne 
+	for(let [playlist, song] of Object.entries(data)) {
+		let means_playlistSpecific = {};
+		for(let [songURL, songData] of Object.entries(song)) {
 			let mean = 0;
-			pos_array.forEach(elem => {
-				mean += elem;
-			});
-			mean /= pos_array.length;
-			myMap.set(url, mean); // La moyenne des positions ?
+			// On fait la somme des positions de la chanson
+			for(let i = 0 ; i < songData.positions.length ; i++) {
+				mean += songData.positions.position;
+			}
+			mean /= songData.positions.length;
+			means_playlistSpecific[songURL] = mean;
 		}
+		means[playlist] = means_playlistSpecific;
 	}
 
-	return meanPositions;
+	return means;
 }
 
 function parseData() {
@@ -425,8 +409,8 @@ let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 let positions = getPositions(playlists);
 let isTop15 = getIsTop15(positions);
 let timeAppeared = getTimeAppeared(data);
-let meanPositions = getMeanPosition(positions);
-console.log(timeAppeared);
+let meanPositions = getMeanPosition(data);
+console.log(meanPositions);
 
 app.use(express.static('public'));
 
