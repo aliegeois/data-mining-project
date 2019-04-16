@@ -129,19 +129,18 @@ function getIsTop15(positions) {
 	 * Value 2: la chanson a-t-elle une position-pic < 15 ?
 	 * @type {Map<string, Map<string, boolean>>}
 	 */
-	let isTop15 = new Map();
-	for(let [playlist_name, song] of positions) {
-		/** @type {Map<string, boolean>} */
-		let myMap;
-		if(isTop15.has(playlist_name)) {
-			myMap = isTop15.get(playlist_name);
+	let isTop15 = {};
+	for(let [playlist_name, song] of Object.entries(positions)) {
+		let _map;
+		if(isTop15.hasOwnProperty(playlist_name)) {
+			_map = isTop15[playlist_name];
 		} else {
-			myMap = new Map();
-			isTop15.set(playlist_name, myMap);
+			_map = {};
+			isTop15[playlist_name] = _map;
 		}
 		
-		for(let [url, pos_array] of song)
-			myMap.set(url, Math.min(...pos_array) < 15); // La position-pic est-elle inférieure à 15 ?
+		for(let [url, pos_array] of Object.entries(song))
+			_map[url] = Math.min(...pos_array) < 15; // La position-pic est-elle inférieure à 15 ?
 	}
 
 	return isTop15;
@@ -202,25 +201,24 @@ function getMeanPosition(positions) {
 	 * @type {Map<string, Map<string, boolean>>}
 	 */
 
-	let meanPositions = new Map();
-	for(let [playlist_name, song] of positions) {
-		/** @type {Map<string, boolean>} */
+	let meanPositions = {};
+	for(let [playlist_name, song] of Object.entries(positions)) {
 		let myMap;
-		if(meanPositions.has(playlist_name)) {
-			myMap = meanPositions.get(playlist_name);
+		if(meanPositions.hasOwnProperty(playlist_name)) {
+			myMap = meanPositions[playlist_name];
 		} else {
-			myMap = new Map();
-			meanPositions.set(playlist_name, myMap);
+			myMap = {};
+			meanPositions[playlist_name] = myMap;
 		}
 		
-		for(let [url, pos_array] of song) {
+		for(let [url, pos_array] of Object.entries(song)) {
 			// On fait la moyenne 
 			let mean = 0;
 			pos_array.forEach(elem => {
 				mean += elem;
 			});
 			mean /= pos_array.length;
-			myMap.set(url, mean); // La moyenne des positions ?
+			myMap[url] = mean; // La moyenne des positions ?
 		}
 	}
 
@@ -374,15 +372,15 @@ function parseData2() {
 		if(data.hasOwnProperty(line[5])) {
 			if(data[line[5]].hasOwnProperty(line[3])) {
 				data[line[5]][line[3]].positions.push({
-					date: line[4],
-					position: line[0]
+					date: new Date(line[4]),
+					position: parseInt(line[0])
 				});
 			} else {
 				data[line[5]][line[3]] = {
 					...o, // On passe tous les attributs de o à son parent
 					positions: [{
-						date: line[4],
-						position: line[0]
+						date: new Date(line[4]),
+						position: parseInt(line[0])
 					}]
 				};
 			}
@@ -391,8 +389,8 @@ function parseData2() {
 			data[line[5]][line[3]] = {
 				...o,
 				positions: [{
-					date: line[4],
-					position: line[0]
+					date: new Date(line[4]),
+					position: parseInt(line[0])
 				}]
 			};
 		}
@@ -401,21 +399,15 @@ function parseData2() {
 	return data;
 }
 
-let data = parseData2();
-console.log(getPositions2(data));
-
-for(let [playlist, songs] of Object.entries(data)) {
-	
-}
-
-let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
+// let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
 /* A partir de là, on a le tableau des positions bien formé */
-let positions = getPositions(playlists);
+let data = parseData2();
+let positions = getPositions2(data);
 let isTop15 = getIsTop15(positions);
 let timeAppeared = getTimeAppeared(data);
 let meanPositions = getMeanPosition(positions);
-console.log(timeAppeared);
+console.log(meanPositions);
 
 app.use(express.static('public'));
 
