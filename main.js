@@ -237,8 +237,37 @@ function normalize(data) { // Pas fini
 	}
 }
 
-function getStats(data) { // Obtenir la moyenne et l'écart-type
+function getStats(data) { // Obtenir la moyenne et l'écart-type (à finir)
+	let mean = {};
+	for(let [playlist, songs] of Object.entries(data)) {
+		mean[playlist] = {};
+		for(let [url, infos] of Object.entries(songs)) {
+			for(let [variable, valeur] of Object.entries(infos)) {
+				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
+					mean[playlist][variable] += valeur;
+				}
+			}
+		}
+	}
+	for(let [playlist, st] of mean) {
+		for(let [variable, valeur] of st) {
+			mean[playlist][variable] /= Object.keys(st).length;
+		}
+	}
 
+	let variance = {};
+	for(let [playlist, songs] of Object.entries(data)) {
+		for(let [url, infos] of Object.entries(songs)) {
+			for(let [variable, valeur] of Object.entries(infos)) {
+
+				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
+					mean[playlist][variable] += valeur;
+				}
+			}
+		}
+	}
+
+	let standardDeviation = {};
 }
 
 /**
