@@ -149,31 +149,39 @@ function getIsTop15(positions) {
 
 /**
  * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine 2.1 3ème tiret
- * Key 1 : nom de la playlist
- * Key 2 : url de la chanson
- * Value finale : list des positions d'une chanson pour une playlist
- * @param {Map<string, Map<string, number[]>>} songs
+ * Data est un object js pouvant être envisagé comme une Map avec pour clé une string (le nom de la playlist), et comme valeur une map
+ * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
+ * ses positions...
+ * @param {Object} data
  * Key 1 : nom de la playlist
  * Key 2 : url de la chanson
  * Value finale : temps pendant laquelle la chanson est apparue dans la playlist (nombre de semaines)
  * @returns {Map<string, Map<string, number>>}
  */
-function getTimeAppeared(positions) {
+function getTimeAppeared(data) {
 
-	let times = new Map();
+	let times = {};
+
+	for(let [playlist, song] of Object.entries(data)) {
+		let times_playlistSpecific = {};
+		for(let [songURL, songData] of Object.entries(song)) {
+			times_playlistSpecific[songURL] = songData.positions.length; // songData.positions est la liste des positions de la chanson au fil du temps
+		}
+		times[playlist] = times_playlistSpecific;
+	}
 
 	// Pour chaque playlist
-	positions.forEach((value, key) => {
-		let timesPlaylist = new Map();
+	// positions.forEach((value, key) => {
+	// 	let timesPlaylist = new Map();
 
-		// Pour chaque chanson dans la playlist value
-		value.forEach((value, key) => {
-			let timeURL = value.length;
-			timesPlaylist[key] = timeURL;
-		});
+	// 	// Pour chaque chanson dans la playlist value
+	// 	value.forEach((value, key) => {
+	// 		let timeURL = value.length;
+	// 		timesPlaylist[key] = timeURL;
+	// 	});
 
-		times[key] = timesPlaylist;
-	});
+	// 	times[key] = timesPlaylist;
+	// });
 
 	return times;
 
@@ -304,6 +312,7 @@ function parseData() {
 	return { playlists, playlist_headers, tracks, tracks_headers };
 }
 
+
 function parseData2() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
 	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
@@ -404,9 +413,9 @@ let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 /* A partir de là, on a le tableau des positions bien formé */
 let positions = getPositions(playlists);
 let isTop15 = getIsTop15(positions);
-let timeAppeared = getTimeAppeared(positions);
+let timeAppeared = getTimeAppeared(data);
 let meanPositions = getMeanPosition(positions);
-//console.log(meanPositions);
+console.log(timeAppeared);
 
 app.use(express.static('public'));
 
