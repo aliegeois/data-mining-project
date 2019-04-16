@@ -6,26 +6,29 @@ const fs = require('fs'),
 function removeQuotes(data) { // Gère les guillemets
 	let clean = '',
 		string = false,
-		unicode = -1,
-		str_unicode = '',
+		//unicode = -1,
+		//str_unicode = '',
 		escaped = false;
 	for(let ch of data) {
 		if(string) {
-			if(unicode !== -1) {
-				if(unicode === 3) {
-					clean += String.fromCharCode(parseInt(str_unicode, 16));
+			/*if(unicode !== -1) {
+				if(unicode === 4) {
+					let _char = String.fromCharCode(parseInt(str_unicode, 16));
+					clean += _char;
+					console.log(str_unicode, _char);
+					str_unicode = '';
 					unicode = -1;
 				} else {
 					str_unicode += ch;
 					unicode++;
 				}
-			} else if(escaped) {
-				if(ch === 'u') {
+			} else */if(escaped) {
+				/*if(ch === 'u') {
 					unicode = 0;
-				} else {
-					clean += ch;
-					escaped = false;
-				}
+				} else {*/
+				clean += ch;
+				escaped = false;
+				//}
 			} else if(ch === '\\') {
 				escaped = true;
 			} else if(ch === '"') {
@@ -58,6 +61,45 @@ function remove13(buffer) { // Enlève les retours chariot
  * @param {*} playlists 
  */
 function getPositions(playlists) {
+	/**
+	 * Key 1: nom de la playlist
+	 * Key 2: url de la chanson
+	 * Value 2: tableau des positions de la chanson dans la playlist
+	 * @type {Map<string, Map<string, number[]>>}
+	 */
+	let positions = new Map();
+	for(let i = 0; i < playlists.length; i++) {
+		let myMap;
+		let type = playlists.playlist[i],
+			position = playlists.position[i],
+			url = playlists.url[i];
+
+		if(positions.has(type)) {
+			myMap = positions.get(type);
+		} else {
+			myMap = new Map();
+			positions.set(type, myMap);
+		}
+
+		if(myMap.has(url)) {
+			let pos = myMap.get(url);
+			pos.push(position);
+			myMap.set(url, pos);
+		} else {
+			myMap.set(url, [position]);
+		}
+	}
+
+	// console.log(positions.get('fr'));
+
+	return positions;
+}
+
+/**
+ * Position-pic, 2.1, 1er tiret
+ * @param {*} playlists 
+ */
+function getPositions2(data) { // En cours de modification
 	/**
 	 * Key 1: nom de la playlist
 	 * Key 2: url de la chanson
@@ -270,10 +312,103 @@ function parseData() {
 		tracks[line[0]] = value;
 	}
 
-	console.log(playlists);
+	fs.writeFile('playlists_unicode', JSON.stringify(playlists), err => {
+		if(err)
+			throw err;
+	});
 
 	return { playlists, playlist_headers, tracks, tracks_headers };
 }
+
+function parseData2() {
+	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
+	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
+	raw_playlists.pop(); // La dernière ligne est vide, il faut la supprimer
+	raw_tracks.pop();
+
+	let data = {};
+	/** @type {string[]} */
+	let playlist_headers = raw_playlists[0].split('\t'); // On supprime les guillemets des headers
+	let tracks = {};
+	/** @type {string[]} */
+	let tracks_headers = raw_tracks[0].split('\t');
+
+
+	for(let i = 1; i < raw_tracks.length; i++) {
+		let line = raw_tracks[i].split('\t');
+		/** @type {{BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}} */
+		let value = {};
+		for(let j = 0; j < line.length; j++) {
+			let column;
+			switch(tracks_headers[j]) {
+			case 'BPM':
+				column = parseInt(line[j]);
+				break;
+			case 'Mode':
+				if(line[j] === 'Major')
+					column = true;
+				else if(line[j] === 'Minor')
+					column = false;
+				else
+					column = null;
+				break;
+			case 'Danceability':
+			case 'Valence':
+			case 'Energy':
+			case 'Acousticness':
+			case 'Instrumentalness':
+			case 'Liveness':
+			case 'Speechiness':
+				column = parseInt(line[j]) / 100;
+				break;
+			default:
+				column = line[j];
+			}
+			if(tracks_headers[j] !== 'url')
+				value[tracks_headers[j]] = column;
+			// tracks[tracks_headers[j]].push(value);
+		}
+		tracks[line[0]] = value;
+	}
+
+	for(let i = 1; i < raw_playlists.length; i++) {
+		let line = raw_playlists[i].split('\t');
+
+		let o = { // Déstructuration des objets
+			...{ title: line[1], artists: line[2] },
+			...tracks[line[3]]
+		};
+		if(data.hasOwnProperty(line[5])) {
+			if(data[line[5]].hasOwnProperty(line[3])) {
+				data[line[5]][line[3]].positions.push({
+					date: line[4],
+					position: line[0]
+				});
+			} else {
+				data[line[5]][line[3]] = {
+					...o, // On passe tous les attributs de o à son parent
+					positions: [{
+						date: line[4],
+						position: line[0]
+					}]
+				};
+			}
+		} else {
+			data[line[5]] = {};
+			data[line[5]][line[3]] = {
+				...o,
+				positions: [{
+					date: line[4],
+					position: line[0]
+				}]
+			};
+		}
+	}
+
+	return data;
+}
+
+let data = parseData2();
 
 let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
