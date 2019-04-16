@@ -36,6 +36,149 @@ function remove13(buffer) { // Enlève les retours chariot
 	return Buffer.from(clean);
 }
 
+/**
+ * Position-pic, 2.1, 1er tiret
+ * @param {*} playlists 
+ */
+function getPositions(playlists) {
+	/**
+	 * Key 1: nom de la playlist
+	 * Key 2: url de la chanson
+	 * Value 2: tableau des positions de la chanson dans la playlist
+	 * @type {Map<string, Map<string, number[]>>}
+	 */
+	let positions = new Map();
+	for(let i = 0; i < playlists.length; i++) {
+		let myMap;
+		let type = playlists.playlist[i],
+			position = playlists.position[i],
+			url = playlists.url[i];
+
+		if(positions.has(type)) {
+			myMap = positions.get(type);
+		} else {
+			myMap = new Map();
+			positions.set(type, myMap);
+		}
+
+		if(myMap.has(url)) {
+			let pos = myMap.get(url);
+			pos.push(position);
+			myMap.set(url, pos);
+		} else {
+			myMap.set(url, [position]);
+		}
+	}
+
+	// console.log(positions.get('fr'));
+
+	return positions;
+}
+
+/**
+ * Indicateur binaire n°1 2.1, 2ème tiret
+ * @param {Map<string, Map<string, number[]>>} positions 
+ */
+function getIsTop15(positions) {
+	/**
+	 * Key 1: nom de la playlist
+	 * Key 2: nom de la chanson
+	 * Value 2: la chanson a-t-elle une position-pic < 15 ?
+	 * @type {Map<string, Map<string, boolean>>}
+	 */
+	let isTop15 = new Map();
+	for(let [playlist_name, song] of positions) {
+		/** @type {Map<string, boolean>} */
+		let myMap;
+		if(isTop15.has(playlist_name)) {
+			myMap = isTop15.get(playlist_name);
+		} else {
+			myMap = new Map();
+			isTop15.set(playlist_name, myMap);
+		}
+		
+		for(let [url, pos_array] of song) {
+			myMap.set(url, Math.min(...pos_array) < 15); // La position-pic est-elle inférieure à 15 ?
+		}
+	}
+
+	return isTop15;
+}
+
+
+/**
+ * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine 2.1 3ème tiret
+ * Key 1 : nom de la playlist
+ * Key 2 : url de la chanson
+ * Value finale : list des positions d'une chanson pour une playlist
+ * @param {Map<string, Map<string, number[]>>} songs
+ * Key 1 : nom de la playlist
+ * Key 2 : url de la chanson
+ * Value finale : temps pendant laquelle la chanson est apparue dans la playlist (nombre de semaines)
+ * @returns {Map<string, Map<string, number>>}
+ */
+function getTimeAppeared(positions) {
+
+	let times = new Map();
+
+	// Pour chaque playlist
+	positions.forEach((value, key) => {
+		let timesPlaylist = new Map();
+
+		// Pour chaque chanson dans la playlist value
+		value.forEach((value, key) => {
+			let timeURL = value.length;
+			timesPlaylist[key] = timeURL;
+		});
+
+		times[key] = timesPlaylist;
+	});
+
+	return times;
+
+}
+
+
+/**
+ * Indicateur binaire n°1 2.1, 2ème tiret
+ * Key 1 : nom de la playlist
+ * Key 2 : url de la chanson
+ * Value finale : list des positions d'une chanson pour une playlist
+ * @param {Map<string, Map<string, number[]>>} positions 
+ */
+function getMeanPosition(positions) {
+	/**
+	 * Key 1: nom de la playlist
+	 * Key 2: nom de la chanson
+	 * Value 2: la valeur moyenne ?
+	 * @type {Map<string, Map<string, boolean>>}
+	 */
+
+	let meanPositions = new Map();
+	for(let [playlist_name, song] of positions) {
+		/** @type {Map<string, boolean>} */
+		let myMap;
+		if(meanPositions.has(playlist_name)) {
+			myMap = meanPositions.get(playlist_name);
+		} else {
+			myMap = new Map();
+			meanPositions.set(playlist_name, myMap);
+		}
+		
+		for(let [url, pos_array] of song) {
+			// On fait la moyenne 
+			let mean = 0;
+			pos_array.forEach(elem => {
+				mean += elem;
+			});
+			mean /= pos_array.length;
+			myMap.set(url, mean); // La moyenne des positions ?
+		}
+	}
+
+	return meanPositions;
+}
+
 function main() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
 	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
@@ -67,85 +210,13 @@ function main() {
 			tracks[tracks_headers[j]].push(line[j]);
 	}
 	
-	/* Position-pic, 2.1, 1er tiret */
-
-	/**
-	 * Key 1: nom de la playlist
-	 * Key 2: url de la chanson
-	 * Value 2: tableau des positions de la chanson dans la playlist
-	 * @type {Map<string, Map<string, number[]>>}
-	 */
-	let positions = new Map();
-	for(let i = 0; i < playlists.length; i++) {
-		let myMap;
-		let type = playlists.playlist[i],
-			position = playlists.position[i],
-			url = playlists.url[i];
-
-		if(positions.has(type)) {
-			myMap = positions.get(type);
-		} else {
-			myMap = new Map();
-			positions.set(type, myMap);
-			
-		}
-
-		if(myMap.has(url)) {
-			let pos = myMap.get(url);
-			pos.push(position);
-			myMap.set(url, pos);
-		} else {
-			myMap.set(url, [position]);
-		}
-	}
-
-	/* Indicateur binaire n°1 2.1, 2ème tiret */
-
-	/**
-	 * Key 1: nom de la playlist
-	 * Key 2: nom de la chanson
-	 * @type {Map<string, Map<string, boolean>>}
-	 */
-	let isTop15 = new Map();
-
-	
-
-	//console.log(positions.get('fr'));
-
-	let timesAppeared = timeAppeared(positions);
-
-	console.log(timesAppeared);
+	/* A partir de là, on a le tableau des positions bien formé */
+	let positions = getPositions(playlists);
+	let isTop15 = getIsTop15(positions);
+	let timeAppeared = getTimeAppeared(positions);
+	let meanPositions = getMeanPosition(positions);
+	//console.log(meanPositions);
 }
 
 main();
 
-/**
- * Key 1 : nom de la playlist
- * Key 2 : url de la chanson
- * Value finale : list des positions d'une chanson pour une playlist
- * @param {Map<string, Map<string, number[]>>} songs
- * Key 1 : nom de la playlist
- * Key 2 : url de la chanson
- * Value finale : temps pendant laquelle la chanson est apparue dans la playlist (nombre de semaines)
- * @returns {Map<string, Map<string, number>>}
- */
-function timeAppeared(songs) {
-
-	let times = new Map();
-
-	// Pour chaque playlist
-	songs.forEach((value, key) => {
-		let timesPlaylist = new Map();
-
-		// Pour chaque chanson dans la playlist value
-		value.forEach((value, key) => {
-			timeURL = value.length;
-			timesPlaylist[key] = timeURL;
-		});
-
-		times[key] = timesPlaylist;
-	});
-
-	return times;
-
-}
