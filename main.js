@@ -104,6 +104,80 @@ function getIsTop15(positions) {
 	return isTop15;
 }
 
+
+/**
+ * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine 2.1 3ème tiret
+ * Key 1 : nom de la playlist
+ * Key 2 : url de la chanson
+ * Value finale : list des positions d'une chanson pour une playlist
+ * @param {Map<string, Map<string, number[]>>} songs
+ * Key 1 : nom de la playlist
+ * Key 2 : url de la chanson
+ * Value finale : temps pendant laquelle la chanson est apparue dans la playlist (nombre de semaines)
+ * @returns {Map<string, Map<string, number>>}
+ */
+function getTimeAppeared(positions) {
+
+	let times = new Map();
+
+	// Pour chaque playlist
+	positions.forEach((value, key) => {
+		let timesPlaylist = new Map();
+
+		// Pour chaque chanson dans la playlist value
+		value.forEach((value, key) => {
+			let timeURL = value.length;
+			timesPlaylist[key] = timeURL;
+		});
+
+		times[key] = timesPlaylist;
+	});
+
+	return times;
+
+}
+
+
+/**
+ * Indicateur binaire n°1 2.1, 2ème tiret
+ * Key 1 : nom de la playlist
+ * Key 2 : url de la chanson
+ * Value finale : list des positions d'une chanson pour une playlist
+ * @param {Map<string, Map<string, number[]>>} positions 
+ */
+function getMeanPosition(positions) {
+	/**
+	 * Key 1: nom de la playlist
+	 * Key 2: nom de la chanson
+	 * Value 2: la valeur moyenne ?
+	 * @type {Map<string, Map<string, boolean>>}
+	 */
+
+	let meanPositions = new Map();
+	for(let [playlist_name, song] of positions) {
+		/** @type {Map<string, boolean>} */
+		let myMap;
+		if(meanPositions.has(playlist_name)) {
+			myMap = meanPositions.get(playlist_name);
+		} else {
+			myMap = new Map();
+			meanPositions.set(playlist_name, myMap);
+		}
+		
+		for(let [url, pos_array] of song) {
+			// On fait la moyenne 
+			let mean = 0;
+			pos_array.forEach(elem => {
+				mean += elem;
+			});
+			mean /= pos_array.length;
+			myMap.set(url, mean); // La moyenne des positions ?
+		}
+	}
+
+	return meanPositions;
+}
+
 function main() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
 	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
@@ -174,10 +248,13 @@ function main() {
 		}
 	}
 	
+	/* A partir de là, on a le tableau des positions bien formé */
 	let positions = getPositions(playlists);
 	let isTop15 = getIsTop15(positions);
-
-	console.log(isTop15);
+	let timeAppeared = getTimeAppeared(positions);
+	let meanPositions = getMeanPosition(positions);
+	//console.log(meanPositions);
 }
 
 main();
+
