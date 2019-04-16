@@ -99,37 +99,21 @@ function getPositions(playlists) {
  * Position-pic, 2.1, 1er tiret
  * @param {*} playlists 
  */
-function getPositions2(data) { // En cours de modification
+function getPositions2(data) {
+	// Object.values(data).map(playlist => Object.values(playlist).map(song => song.positions.map(pos => pos.position)));
 	/**
 	 * Key 1: nom de la playlist
 	 * Key 2: url de la chanson
 	 * Value 2: tableau des positions de la chanson dans la playlist
 	 * @type {Map<string, Map<string, number[]>>}
 	 */
-	let positions = new Map();
-	for(let i = 0; i < playlists.length; i++) {
-		let myMap;
-		let type = playlists.playlist[i],
-			position = playlists.position[i],
-			url = playlists.url[i];
-
-		if(positions.has(type)) {
-			myMap = positions.get(type);
-		} else {
-			myMap = new Map();
-			positions.set(type, myMap);
-		}
-
-		if(myMap.has(url)) {
-			let pos = myMap.get(url);
-			pos.push(position);
-			myMap.set(url, pos);
-		} else {
-			myMap.set(url, [position]);
-		}
+	let positions = {};
+	for(let [playlist, songs] of Object.entries(data)) {
+		let _map = {};
+		positions[playlist] = _map;
+		for(let [url, infos] of Object.entries(songs))
+			_map[url] = infos.positions.map(pos => pos.position);
 	}
-
-	// console.log(positions.get('fr'));
 
 	return positions;
 }
@@ -402,6 +386,11 @@ function parseData2() {
 }
 
 let data = parseData2();
+console.log(getPositions2(data));
+
+for(let [playlist, songs] of Object.entries(data)) {
+	
+}
 
 let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
