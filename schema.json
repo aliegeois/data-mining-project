@@ -25,15 +25,27 @@
 
 {
 	"fr": {
-		"*url*": {
-			"title": "abc",
+		"https://www.spotontrack.com/track/julien/41177241": {
+			"title": "Julien",
 			"bpm": 42,
 			"positions": [{
-				"date": "9999-99-99",
-				"position": 42
-			}]
-		}
-	}
+				"date": "2018-09-26",
+				"position": 3
+			}, {
+				"date": "2018-10-03",
+				"position": 4
+			}, ...
+			]
+		},
+		"https://www.spotontrack.com/track/baisers-voles/40595594": {
+			...
+		},
+		...
+	},
+	"jazz": {
+		...
+	},
+	...
 }
 
 {
