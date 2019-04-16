@@ -152,10 +152,6 @@ function getIsTop15(positions) {
  * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
  * ses positions...
  * @param {Object} data
- * Key 1 : nom de la playlist
- * Key 2 : url de la chanson
- * Value finale : temps pendant laquelle la chanson est apparue dans la playlist (nombre de semaines)
- * @returns {Map<string, Map<string, number>>}
  */
 function getTimeAppeared(data) {
 
@@ -187,20 +183,13 @@ function getTimeAppeared(data) {
 }
 
 /**
- * Indicateur binaire n°1 2.1, 2ème tiret
- * Key 1 : nom de la playlist
- * Key 2 : url de la chanson
- * Value finale : list des positions d'une chanson pour une playlist
- * @param {Map<string, Map<string, number[]>>} positions 
+ * Temps pendant lequel la chanson est apparu dans la playlist en nombre de semaine 2.1 3ème tiret
+ * Data est un object js pouvant être envisagé comme une Map avec pour clé une string (le nom de la playlist), et comme valeur une map
+ * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
+ * ses positions...
+ * @param {Object} data
  */
-function getMeanPosition(positions) {
-	/**
-	 * Key 1: nom de la playlist
-	 * Key 2: nom de la chanson
-	 * Value 2: la valeur moyenne ?
-	 * @type {Map<string, Map<string, boolean>>}
-	 */
-
+function getMeanPosition(data) {
 	let meanPositions = {};
 	for(let [playlist_name, song] of Object.entries(positions)) {
 		let myMap;
@@ -213,10 +202,11 @@ function getMeanPosition(positions) {
 		
 		for(let [url, pos_array] of Object.entries(song)) {
 			// On fait la moyenne 
-			let mean = 0;
+			/*let mean = 0;
 			pos_array.forEach(elem => {
 				mean += elem;
-			});
+			});*/
+			let mean = pos_array.reduce((a, b) => a + b);
 			mean /= pos_array.length;
 			myMap[url] = mean; // La moyenne des positions ?
 		}
@@ -406,7 +396,7 @@ let data = parseData2();
 let positions = getPositions2(data);
 let isTop15 = getIsTop15(positions);
 let timeAppeared = getTimeAppeared(data);
-let meanPositions = getMeanPosition(positions);
+let meanPositions = getMeanPosition(data);
 console.log(meanPositions);
 
 app.use(express.static('public'));
