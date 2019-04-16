@@ -253,7 +253,7 @@ function main() {
 	let isTop15 = getIsTop15(positions);
 	let timeAppeared = getTimeAppeared(positions);
 	let meanPositions = getMeanPosition(positions);
-	//console.log(meanPositions);
+	console.log(meanPositions);
 }
 
 main();
