@@ -57,3 +57,15 @@
 	}
 	
 }
+
+{
+	"fr": {
+		"liveness": {
+			"standardDeviation": 42,
+			"mean": 57
+		},
+		"speechiness": {
+			
+		}
+	}
+}

@@ -215,6 +215,43 @@ function getMeanPosition(data) {
 	return meanPositions;
 }
 
+function addColumns(data) {
+	for(let songs of Object.values(data)) {
+		for(let infos of Object.values(songs)) {
+			for(let i of ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']) {
+				if(infos.Key === i)
+					infos[i] = 1;
+				else
+					infos[i] = 0;
+			}
+		}
+	}
+}
+
+function normalize(data) { // Pas fini
+	for(let songs of Object.values(data)) {
+		for(let infos of Object.values(songs)) {
+			for(let [variable, valeur] of Object.entries(infos)) {
+				switch(variable) {
+				case '':
+					
+					break;
+				}
+			}
+			for(let i of ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']) {
+				if(infos.Key === i)
+					infos[i] = 1;
+				else
+					infos[i] = 0;
+			}
+		}
+	}
+}
+
+function getStats(data) { // Obtenir la moyenne et l'écart-type
+
+}
+
 function parseData() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
 	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
@@ -327,9 +364,9 @@ function parseData2() {
 				break;
 			case 'Mode':
 				if(line[j] === 'Major')
-					column = true;
+					column = 1;
 				else if(line[j] === 'Minor')
-					column = false;
+					column = 0;
 				else
 					column = null;
 				break;
@@ -397,11 +434,16 @@ let positions = getPositions2(data);
 let isTop15 = getIsTop15(positions);
 let timeAppeared = getTimeAppeared(data);
 let meanPositions = getMeanPosition(data);
-console.log(meanPositions);
+addColumns(data);
+console.log(data);
 
 app.use(express.static('public'));
 
-app.get('/playlists', (req, res) => {
+app.get('/data.json', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
+	res.end(JSON.stringify(data));
+});
 
+app.listen(port, () => {
+	console.log('wesh');
 });
