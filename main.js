@@ -205,69 +205,104 @@ function getMeanPosition(data) {
 }
 
 function addColumns(data) {
-	for(let songs of Object.values(data)) {
-		for(let infos of Object.values(songs)) {
+	let d2 = {};
+	for(let [playlist, songs] of Object.entries(data)) {
+		d2[playlist] = {};
+		for(let [url, infos] of Object.entries(songs)) {
+			d2[playlist][url] = {};
+			for(let [variable, valeur] of Object.entries(infos))
+				d2[playlist][url][variable] = valeur;
 			for(let i of ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']) {
 				if(infos.Key === i)
-					infos[i] = 1;
+					d2[playlist][url][i] = 1;
 				else
-					infos[i] = 0;
+					d2[playlist][url][i] = 0;
 			}
 		}
 	}
+
+	return d2;
 }
 
-function normalize(data) { // Pas fini
-	for(let songs of Object.values(data)) {
+function normalize(data, stats) { // Pas fini
+	let d2 = {};
+	for(let [playlist, songs] of Object.entries(data)) {
+		d2[playlist] = {};
+		for(let [url, infos] of Object.entries(songs)) {
+			d2[playlist][url] = {};
+			for(let variable of Object.keys(infos)) {
+				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
+					d2[playlist][url][variable] = (data[playlist][url][variable] - stats[playlist][variable].mean) / stats[playlist][variable].standardDeviation;
+				}
+			}
+		}
+	}
+
+	return d2;
+}
+
+function getStats(data) { // Obtenir la moyenne, la variance et l'écart-type
+	let stats = {};
+	for(let [playlist, songs] of Object.entries(data)) {
+		stats[playlist] = {};
 		for(let infos of Object.values(songs)) {
 			for(let [variable, valeur] of Object.entries(infos)) {
-				switch(variable) {
-				case '':
-					
-					break;
+				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
+					if(stats[playlist].hasOwnProperty(variable)) {
+						stats[playlist][variable].mean += valeur; // Somme de tous les éléments
+					} else {
+						stats[playlist][variable] = {
+							mean: valeur,
+							variance: 0
+						};
+					}
 				}
-			}
-			for(let i of ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']) {
-				if(infos.Key === i)
-					infos[i] = 1;
-				else
-					infos[i] = 0;
 			}
 		}
 	}
+	for(let [playlist, st] of Object.entries(stats)) { // Diviser la somme par le nombre d'éléments (la moyenne quoi)
+		for(let variable of Object.keys(st)) {
+			stats[playlist][variable].mean /= Object.keys(data[playlist]).length;
+		}
+	}
+
+	for(let [playlist, songs] of Object.entries(data)) {
+		for(let infos of Object.values(songs)) {
+			for(let [variable, valeur] of Object.entries(infos)) {
+				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
+					stats[playlist][variable].variance += Math.pow(valeur - stats[playlist][variable].mean, 2); // Variance
+				}
+			}
+		}
+	}
+	for(let [playlist, st] of Object.entries(stats)) {
+		for(let variable of Object.keys(st)) {
+			stats[playlist][variable].variance /= Object.keys(data[playlist]).length;
+			stats[playlist][variable].standardDeviation = Math.sqrt(stats[playlist][variable].variance); // Ecart-type = sqrt(variance)
+		}
+	}
+
+	return stats;
 }
 
-function getStats(data) { // Obtenir la moyenne et l'écart-type (à finir)
-	let mean = {};
+/**
+ * 
+ * @param {*} data Données normalizées
+ */
+function meanMusic(data) { // En cours de création
+	let stats = getStats(data);
+
 	for(let [playlist, songs] of Object.entries(data)) {
-		mean[playlist] = {};
-		for(let [url, infos] of Object.entries(songs)) {
-			for(let [variable, valeur] of Object.entries(infos)) {
-				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
-					mean[playlist][variable] += valeur;
-				}
-			}
-		}
-	}
-	for(let [playlist, st] of mean) {
-		for(let [variable, valeur] of st) {
-			mean[playlist][variable] /= Object.keys(st).length;
-		}
+
 	}
 
-	let variance = {};
-	for(let [playlist, songs] of Object.entries(data)) {
-		for(let [url, infos] of Object.entries(songs)) {
-			for(let [variable, valeur] of Object.entries(infos)) {
 
-				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
-					mean[playlist][variable] += valeur;
-				}
-			}
+	for(let [playlist, st] of Object.entries(stats)) { // Diviser la somme par le nombre d'éléments (la moyenne quoi)
+		for(let variable of Object.keys(st)) {
+			
+			stats[playlist][variable].mean /= Object.keys(data[playlist]).length;
 		}
 	}
-
-	let standardDeviation = {};
 }
 
 /**
@@ -279,8 +314,8 @@ function getStats(data) { // Obtenir la moyenne et l'écart-type (à finir)
  * @param {Object} data 
  */
 function getMeanPosInf15(meanPos) {
-
 	let meanPosInf15 = {};
+
 	for(let [playlist_name, song] of Object.entries(meanPos)) {
 		let meanPosInf15_playlistSpecific = {};
 		for( let [song_url, mean] of Object.entries(song)) {
@@ -292,12 +327,9 @@ function getMeanPosInf15(meanPos) {
 		}
 		meanPosInf15[playlist_name] = meanPosInf15_playlistSpecific;
 	}
+	
 	return meanPosInf15;
 }
-
-
-
-
 
 function parseData() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
@@ -480,12 +512,16 @@ let positions = getPositions2(data);
 let isTop15 = getIsTop15(positions);
 let timeAppeared = getTimeAppeared(data);
 let meanPositions = getMeanPosition(data);
-addColumns(data);
-console.log(data);
-let meanPosInf15 = getMeanPosInf15(meanPositions);
-console.log(meanPosInf15);
+let data2 = addColumns(data);
+let stats = getStats(data2);
+let normalized = normalize(data2, stats);
+console.log(normalized);
+// console.log(data2);
 
-app.use(express.static('public'));
+// let meanPosInf15 = getMeanPosInf15(meanPositions);
+// console.log(meanPosInf15);
+
+/*app.use(express.static('public'));
 
 app.get('/data.json', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
@@ -494,4 +530,4 @@ app.get('/data.json', (req, res) => {
 
 app.listen(port, () => {
 	console.log('wesh');
-});
+});*/
