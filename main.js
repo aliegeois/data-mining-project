@@ -1,5 +1,7 @@
 const fs = require('fs'),
+	PCA = require('pca-js'),
 	express = require('express'),
+	sklearn = require('jskit-learn'),
 	app = express(),
 	port = 8080;
 
@@ -353,6 +355,13 @@ function euclidianDistance(m1, m2) {
 	return Math.sqrt(sum);
 }
 
+function euclidianDistanceNormalized(m) {
+	let sum = 0;
+	for(let i of ['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'])
+		sum += m[i]*m[i];
+	return Math.sqrt(sum);
+}
+
 /**
  * 
  * @param {*} mean Chanson moyenne (non normalisée)
@@ -375,11 +384,14 @@ function closestMusics(mean, data, stats, k) {
 	for(let [playlist, songs] of Object.entries(data)) {
 		sortedData[playlist] = Object.entries(songs).map(([url, infos]) => ({
 			url: url,
-			distance: euclidianDistance(infos, mean[playlist])
-		})).sort((e1, e2) => e1.distance < e2.distance);
+			distance: euclidianDistanceNormalized(infos)
+		})).sort((e1, e2) => e1.distance - e2.distance);
 	}
-
-	return Object.entries(sortedData).map(([,songs]) => songs.slice(0, k));
+	
+	return Object.entries(sortedData).map(([playlist ,songs]) => ({[playlist]: songs.slice(0, k)})).reduce((x, t) => {
+		Object.entries(x).forEach(([a, b])=>t[a]=b);
+		return t;
+	}, {});
 }
 
 /**
@@ -423,8 +435,26 @@ function getBestMeanPositionSong(meanPos) {
 function getSongEvolution(data, song, playlist_name) {
 
 	for(let [urlSong, songProperties] of Object.entries(data[playlist_name])) {
-		if(urlSong == song) {
+		if(urlSong === song) {
 			return Object.values(songProperties.positions);
+		}
+	}
+}
+
+/**
+ * 
+ * @param {*} data Données (noralisées ou non)
+ * @param {number} nbDimensions Nombre de dimensions
+ */
+function dimensionReduction(data, nbDimensions) {
+	let d_array = [];
+	for(let [playlist, songs] of Object.entries(data)) {
+		for(let infos of Object.values(songs)) {
+			for(let [variable, valeur] of Object.entries(infos)) {
+				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
+					stats[playlist][variable].variance += Math.pow(valeur - stats[playlist][variable].mean, 2); // Variance
+				}
+			}
 		}
 	}
 }
@@ -618,11 +648,17 @@ let meanMusics = getMeanMusics(data2);
 let closest = closestMusics(meanMusics, normalized, stats, 5);
 console.log(closest);
 
+/*Object.entries(stats).forEach(([playlist, st]) => {
+	console.log(Object.entries(st).sort(([vb1, vl1], [vb2, vl2]) => vl2.variance - vl1.variance));
+});*/
 
 let meanMusicsPerPlaylist = getMeanMusics(data2);
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
-console.log(bestMeanPositionSong);
+
+
+
+// console.log(bestMeanPositionSong);
 // console.log(data2);
 
 // let meanPosInf15 = getMeanPosInf15(meanPositions);
