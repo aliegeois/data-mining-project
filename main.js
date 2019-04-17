@@ -287,22 +287,37 @@ function getStats(data) { // Obtenir la moyenne, la variance et l'écart-type
 
 /**
  * 
- * @param {*} data Données normalizées
+ * @param {*} data
  */
-function meanMusic(data) { // En cours de création
+function getMeanMusics(data) { // En cours de création
+	let music = {};
+	let modeMax = {};
 	let stats = getStats(data);
 
-	for(let [playlist, songs] of Object.entries(data)) {
-
-	}
-
-
-	for(let [playlist, st] of Object.entries(stats)) { // Diviser la somme par le nombre d'éléments (la moyenne quoi)
+	for(let [playlist, st] of Object.entries(stats)) {
+		music[playlist] = {};
+		modeMax[playlist] = {
+			nom: '',
+			valeur: 0
+		};
 		for(let variable of Object.keys(st)) {
-			
-			stats[playlist][variable].mean /= Object.keys(data[playlist]).length;
+			if(['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].includes(variable)) {
+				if(stats[playlist][variable].mean > modeMax[playlist].valeur) {
+					modeMax[playlist] = {
+						nom: variable,
+						valeur: stats[playlist][variable].mean
+					};
+				}
+			} else {
+				music[playlist][variable] = stats[playlist][variable].mean;
+			}
 		}
 	}
+
+	for(let playlist of Object.keys(stats))
+		music[playlist].Mode = modeMax[playlist].nom;
+
+	return music;
 }
 
 /**
@@ -515,7 +530,10 @@ let meanPositions = getMeanPosition(data);
 let data2 = addColumns(data);
 let stats = getStats(data2);
 let normalized = normalize(data2, stats);
-console.log(normalized);
+let meanMusics = getMeanMusics(data2);
+console.log(meanMusics);
+
+
 // console.log(data2);
 
 // let meanPosInf15 = getMeanPosInf15(meanPositions);
