@@ -96,8 +96,7 @@ function getPositions(playlists) {
 }
 
 /**
- * Position-pic, 2.1, 1er tiret
- * @param {*} playlists 
+ * @param {*} data 
  */
 function getPositions2(data) {
 	// Object.values(data).map(playlist => Object.values(playlist).map(song => song.positions.map(pos => pos.position)));
@@ -119,31 +118,68 @@ function getPositions2(data) {
 }
 
 /**
- * Indicateur binaire n°1 2.1, 2ème tiret
- * @param {Map<string, Map<string, number[]>>} positions 
+ * 2.1 - 1er tiret
+ * @param {*} data 
  */
-function getIsTop15(positions) {
+function getPositionsPic(data) {
+
+	let positionsPic = {};
+	for(let [playlist, songs] of Object.entries(data)) { // Pour chaque playlist
+		let positionsPicByPlaylist = {};
+		for(let [song_url, song_data] of Object.entries(songs)) { // Pour chaque musique
+			let bestPosition = Number.MAX_SAFE_INTEGER; // On initialise la position pic à un très grand nombre
+			for(let positions of Object.values(song_data.positions)) { // Pour toute les positions
+				if(positions.position < bestPosition) { // Si on trouve une meilleure position, on modifie
+					bestPosition = positions.position; 
+				}
+			}
+			positionsPicByPlaylist[song_url] = bestPosition;
+		}
+		positionsPic[playlist] = positionsPicByPlaylist;
+	}
+	return positionsPic;
+}
+
+/**
+ * Indicateur binaire n°1 2.1, 2ème tiret
+ */
+function getIsTop15(positionsPic) {
+	
+	let isTop15 = {};
+	for(let [playlist, songsUrl] of Object.entries(positionsPic)) { // Pour chaque playlist
+		let isTop15PlaylistRelativ = {};
+		for(let [songsURL, positionPic] of Object.entries(songsUrl)) { // Pour chaque chanson
+			isTop15PlaylistRelativ[songsURL] = (positionPic < 15);
+		}
+		isTop15[playlist] = isTop15PlaylistRelativ;
+	}
+
+	return isTop15;
+	
+
+	
+	
 	/**
 	 * Key 1: nom de la playlist
 	 * Key 2: nom de la chanson
 	 * Value 2: la chanson a-t-elle une position-pic < 15 ?
 	 * @type {Map<string, Map<string, boolean>>}
 	 */
-	let isTop15 = {};
-	for(let [playlist_name, song] of Object.entries(positions)) {
-		let _map;
-		if(isTop15.hasOwnProperty(playlist_name)) {
-			_map = isTop15[playlist_name];
-		} else {
-			_map = {};
-			isTop15[playlist_name] = _map;
-		}
+	// let isTop15 = {};
+	// for(let [playlist_name, song] of Object.entries(positions)) {
+	// 	let _map;
+	// 	if(isTop15.hasOwnProperty(playlist_name)) {
+	// 		_map = isTop15[playlist_name];
+	// 	} else {
+	// 		_map = {};
+	// 		isTop15[playlist_name] = _map;
+	// 	}
 		
-		for(let [url, pos_array] of Object.entries(song))
-			_map[url] = Math.min(...pos_array) < 15; // La position-pic est-elle inférieure à 15 ?
-	}
+	// 	for(let [url, pos_array] of Object.entries(song))
+	// 		_map[url] = Math.min(...pos_array) < 15; // La position-pic est-elle inférieure à 15 ?
+	// }
 
-	return isTop15;
+	// return isTop15;
 }
 
 /**
@@ -158,9 +194,9 @@ function getTimeAppeared(data) {
 
 	let times = {};
 
-	for(let [playlist, song] of Object.entries(data)) {
+	for(let [playlist, song] of Object.entries(data)) { // Pour chaque playlist
 		let times_playlistSpecific = {};
-		for(let [songURL, songData] of Object.entries(song)) {
+		for(let [songURL, songData] of Object.entries(song)) { // Pour chaque chanson
 			times_playlistSpecific[songURL] = songData.positions.length; // songData.positions est la liste des positions de la chanson au fil du temps
 		}
 		times[playlist] = times_playlistSpecific;
@@ -178,7 +214,7 @@ function getTimeAppeared(data) {
  * ses positions...
  * @param {Object} data
  */
-function getMeanPosition(data) {
+function getMeanPositions(data) {
 	let meanPositions = {};
 	for(let [playlist_name, song] of Object.entries(positions)) {
 		let myMap;
@@ -190,11 +226,6 @@ function getMeanPosition(data) {
 		}
 		
 		for(let [url, pos_array] of Object.entries(song)) {
-			// On fait la moyenne 
-			/*let mean = 0;
-			pos_array.forEach(elem => {
-				mean += elem;
-			});*/
 			let mean = pos_array.reduce((a, b) => a + b);
 			mean /= pos_array.length;
 			myMap[url] = mean; // La moyenne des positions ?
@@ -219,11 +250,7 @@ function getMeanPosInf15(meanPos) {
 	for(let [playlist_name, song] of Object.entries(meanPos)) {
 		let meanPosInf15_playlistSpecific = {};
 		for( let [song_url, mean] of Object.entries(song)) {
-			if(mean < 15) {
-				meanPosInf15_playlistSpecific[song_url] = true;
-			} else {
-				meanPosInf15_playlistSpecific[song_url] = false;
-			}
+			meanPosInf15_playlistSpecific[song_url] = (mean < 15);
 		}
 		meanPosInf15[playlist_name] = meanPosInf15_playlistSpecific;
 	}
@@ -387,12 +414,7 @@ function getBestMeanPositionSong(meanPos) {
  * @param {string} playlist_name
  */
 function getSongEvolution(data, song, playlist_name) {
-
-	for(let [urlSong, songProperties] of Object.entries(data[playlist_name])) {
-		if(urlSong == song) {
-			return Object.values(songProperties.positions);
-		}
-	}
+	return Object.values(data[playlist_name][song].positions); // Nous retournons la liste des positions associées à la playlist et à la musique demandée
 }
 
 
@@ -574,16 +596,18 @@ function parseData2() {
 
 let data = parseData2();
 let positions = getPositions2(data);
-let isTop15 = getIsTop15(positions);
+let positionsPic = getPositionsPic(data);
+let isTop15 = getIsTop15(positionsPic);
 let timeAppeared = getTimeAppeared(data);
-let meanPositions = getMeanPosition(data);
+let meanPositions = getMeanPositions(data);
+let meanPosInf15 = getMeanPosInf15(meanPositions);
 let data2 = addColumns(data);
 let stats = getStats(data2);
 let normalized = normalize(data2, stats);
 let meanMusicsPerPlaylist = getMeanMusics(data2);
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
-console.log(bestMeanPositionSong);
+console.log(isTop15);
 // console.log(data2);
 
 // let meanPosInf15 = getMeanPosInf15(meanPositions);
