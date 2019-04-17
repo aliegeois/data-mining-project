@@ -350,7 +350,7 @@ function getMeanMusics(data) {
 
 /**
  * 2.2 - Analyse Exploratoire - 3ème tiret
- * Indication les url des chansons avec une position moyenne les plus proche de la mosition moyenne de la playlist.
+ * Renvoie les url des chansons ayant la meilleure position moyenne pour chaque playlist.
  * Le paramètre est un object pouvant être vu comme une map avec comme key
  * le nom de la playlist et comme value une map avec comme key l'url de la
  * chanson et comme valeur la position moyenne. C'est ce qui nous est renvoyé
@@ -358,23 +358,23 @@ function getMeanMusics(data) {
  * @param {Object} data
  * Prend meanPositions en paramètre
  */
-function getCloserSongRelativToPosition(meanPos) {
+function getBestMeanPositionSong(meanPos) {
 
-	let closerSongRelativToPosition = {};
+	let bestMeanPositionSong = {};
 
 	for(let [playlist_name, song] of Object.entries(meanPos)) {
 		let currentMean = Object.keys(song).length;
 		let currentURL = '';
-		for( let [song_url, mean] of Object.entries(song)) {
+		for(let [song_url, mean] of Object.entries(song)) {
 			if(mean < currentMean) {
 				currentMean = mean;
 				currentURL = song_url;
 			}
 		}
-		closerSongRelativToPosition[playlist_name] = {url : currentURL, mean : currentMean};
+		bestMeanPositionSong[playlist_name] = {url : currentURL, mean : currentMean};
 	}
 	
-	return closerSongRelativToPosition;
+	return bestMeanPositionSong;
 
 }
 
@@ -581,9 +581,9 @@ let data2 = addColumns(data);
 let stats = getStats(data2);
 let normalized = normalize(data2, stats);
 let meanMusicsPerPlaylist = getMeanMusics(data2);
-let musicCloserToMeanMusic = getCloserSongRelativToPosition(meanPositions);
+let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
-console.log(musicEvolution);
+console.log(bestMeanPositionSong);
 // console.log(data2);
 
 // let meanPosInf15 = getMeanPosInf15(meanPositions);
