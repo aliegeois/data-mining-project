@@ -345,35 +345,69 @@ function getStats(data) { // Obtenir la moyenne, la variance et l'écart-type
  */
 function getMeanMusics(data) {
 	let music = {};
-	let modeMax = {};
+	let keyMax = {};
 	let stats = getStats(data);
 
 	for(let [playlist, st] of Object.entries(stats)) {
 		music[playlist] = {};
-		modeMax[playlist] = {
+		keyMax[playlist] = {
 			nom: '',
 			valeur: 0
 		};
 		for(let variable of Object.keys(st)) {
 			if(['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].includes(variable)) {
-				if(stats[playlist][variable].mean > modeMax[playlist].valeur) {
-					modeMax[playlist] = {
+				if(stats[playlist][variable].mean > keyMax[playlist].valeur) {
+					keyMax[playlist] = {
 						nom: variable,
 						valeur: stats[playlist][variable].mean
 					};
 				}
-			} else {
-				music[playlist][variable] = stats[playlist][variable].mean;
 			}
+			music[playlist][variable] = stats[playlist][variable].mean;
 		}
 	}
 
 	for(let playlist of Object.keys(stats))
-		music[playlist].Mode = modeMax[playlist].nom;
+		music[playlist].Key = keyMax[playlist].nom;
 
 	return music;
 }
 
+function euclidianDistance(m1, m2) {
+	let sum = 0;
+	for(let i of ['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'])
+		sum += Math.pow(m1[i] - m2[i], 2);
+	return Math.sqrt(sum);
+}
+
+/**
+ * 
+ * @param {*} mean Chanson moyenne (non normalisée)
+ * @param {*} data Données normalisées
+ */
+function closestMusics(mean, data, stats, k) {
+	// Normaliser
+	/*let normalizedMean = {};
+
+	for(let [playlist, infos] of Object.entries(mean)) {
+		normalizedMean[playlist] = {};
+		for(let [variable, valeur] of Object.entries(infos)) {
+			console.log(variable, valeur, stats[playlist][variable].mean, stats[playlist][variable].standardDeviation);
+			normalizedMean[playlist][variable] = (valeur - stats[playlist][variable].mean) / stats[playlist][variable].standardDeviation;
+		}
+	}*/
+
+	let sortedData = {};
+
+	for(let [playlist, songs] of Object.entries(data)) {
+		sortedData[playlist] = Object.entries(songs).map(([url, infos]) => ({
+			url: url,
+			distance: euclidianDistance(infos, mean[playlist])
+		})).sort((e1, e2) => e1.distance < e2.distance);
+	}
+
+	return Object.entries(sortedData).map(([,songs]) => songs.slice(0, k));
+}
 
 /**
  * 2.2 - Analyse Exploratoire - 3ème tiret
@@ -604,6 +638,11 @@ let meanPosInf15 = getMeanPosInf15(meanPositions);
 let data2 = addColumns(data);
 let stats = getStats(data2);
 let normalized = normalize(data2, stats);
+let meanMusics = getMeanMusics(data2);
+let closest = closestMusics(meanMusics, normalized, stats, 5);
+console.log(closest);
+
+
 let meanMusicsPerPlaylist = getMeanMusics(data2);
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
