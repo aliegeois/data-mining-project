@@ -204,6 +204,33 @@ function getMeanPosition(data) {
 	return meanPositions;
 }
 
+/**
+ * Indication de si la chanson a une position moyenne infèrieure à 15.
+ * Le paramètre est un object pouvant être vu comme une map avec comme key
+ * le nom de la playlist et comme value une map avec comme key l'url de la
+ * chanson et comme valeur la position moyenne. C'est ce qui nous est renvoyé
+ * par la fonction getMeanPosition
+ * @param {Object} data
+ * Prend positions en paramètres
+ */
+function getMeanPosInf15(meanPos) {
+	let meanPosInf15 = {};
+
+	for(let [playlist_name, song] of Object.entries(meanPos)) {
+		let meanPosInf15_playlistSpecific = {};
+		for( let [song_url, mean] of Object.entries(song)) {
+			if(mean < 15) {
+				meanPosInf15_playlistSpecific[song_url] = true;
+			} else {
+				meanPosInf15_playlistSpecific[song_url] = false;
+			}
+		}
+		meanPosInf15[playlist_name] = meanPosInf15_playlistSpecific;
+	}
+	
+	return meanPosInf15;
+}
+
 function addColumns(data) {
 	let d2 = {};
 	for(let [playlist, songs] of Object.entries(data)) {
@@ -224,7 +251,7 @@ function addColumns(data) {
 	return d2;
 }
 
-function normalize(data, stats) { // Pas fini
+function normalize(data, stats) {
 	let d2 = {};
 	for(let [playlist, songs] of Object.entries(data)) {
 		d2[playlist] = {};
@@ -289,7 +316,7 @@ function getStats(data) { // Obtenir la moyenne, la variance et l'écart-type
  * 
  * @param {*} data
  */
-function getMeanMusics(data) { // En cours de création
+function getMeanMusics(data) {
 	let music = {};
 	let keyMax = {};
 	let stats = getStats(data);
@@ -356,30 +383,52 @@ function closestMusics(mean, data, stats, k) {
 }
 
 /**
- * Indication de si la chanson a une position moyenne infèrieure à 15.
+ * 2.2 - Analyse Exploratoire - 3ème tiret
+ * Renvoie les url des chansons ayant la meilleure position moyenne pour chaque playlist.
  * Le paramètre est un object pouvant être vu comme une map avec comme key
  * le nom de la playlist et comme value une map avec comme key l'url de la
  * chanson et comme valeur la position moyenne. C'est ce qui nous est renvoyé
  * par la fonction getMeanPosition
- * @param {Object} data 
+ * @param {Object} data
+ * Prend meanPositions en paramètre
  */
-function getMeanPosInf15(meanPos) {
-	let meanPosInf15 = {};
+function getBestMeanPositionSong(meanPos) {
+
+	let bestMeanPositionSong = {};
 
 	for(let [playlist_name, song] of Object.entries(meanPos)) {
-		let meanPosInf15_playlistSpecific = {};
-		for( let [song_url, mean] of Object.entries(song)) {
-			if(mean < 15) {
-				meanPosInf15_playlistSpecific[song_url] = true;
-			} else {
-				meanPosInf15_playlistSpecific[song_url] = false;
+		let currentMean = Object.keys(song).length;
+		let currentURL = '';
+		for(let [song_url, mean] of Object.entries(song)) {
+			if(mean < currentMean) {
+				currentMean = mean;
+				currentURL = song_url;
 			}
 		}
-		meanPosInf15[playlist_name] = meanPosInf15_playlistSpecific;
+		bestMeanPositionSong[playlist_name] = {url : currentURL, mean : currentMean};
 	}
 	
-	return meanPosInf15;
+	return bestMeanPositionSong;
+
 }
+
+
+/**
+ * 2.2 - Analyse Exploratoire - 4ème tiret
+ * Renvoie la liste des positions de la chanson song dans la playlist playlist avec leur timestamp associés
+ * @param {*} data
+ * @param {string} song
+ * @param {string} playlist_name
+ */
+function getSongEvolution(data, song, playlist_name) {
+
+	for(let [urlSong, songProperties] of Object.entries(data[playlist_name])) {
+		if(urlSong == song) {
+			return Object.values(songProperties.positions);
+		}
+	}
+}
+
 
 function parseData() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
@@ -570,6 +619,10 @@ let closest = closestMusics(meanMusics, normalized, stats, 5);
 console.log(closest);
 
 
+let meanMusicsPerPlaylist = getMeanMusics(data2);
+let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
+let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+console.log(bestMeanPositionSong);
 // console.log(data2);
 
 // let meanPosInf15 = getMeanPosInf15(meanPositions);
