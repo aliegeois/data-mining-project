@@ -1,10 +1,20 @@
+body {
+    padding-left: 10%;
+    padding-right: 10%;
+    padding-bottom: 30px;
+}
+
 h3 {
     text-align: center;
 }
-#requests {
+h4 {
+    text-align: center;
+    font-size: 22px;
+}
+#questions {
     text-align: center;
 }
-#requests a {
+#questions a {
     margin: 2%;
 }
 
@@ -15,4 +25,26 @@ h3 {
 }
 #description {
     font-size: 20px;
+    margin-bottom: 20px;
+}
+
+.result {
+    max-height: 300px;
+    overflow-y: scroll;
+}
+.result h6 {
+    font-weight: bold;
+}
+.result p {
+    text-align: left;
+}
+
+.toBold {
+    font-weight: bold;
+}
+.colorTrue {
+    color: rgba(29, 151, 29, 1);
+}
+.colorFalse {
+    color: rgba(112, 14, 14, 1);
 }

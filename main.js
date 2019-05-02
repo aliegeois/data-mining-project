@@ -1,7 +1,5 @@
 const fs = require('fs'),
-	PCA = require('pca-js'),
 	express = require('express'),
-	sklearn = require('jskit-learn'),
 	app = express(),
 	port = 8080;
 
@@ -670,7 +668,7 @@ let stats = getStats(data2);
 let normalized = normalize(data2, stats);
 let meanMusics = getMeanMusics(data2);
 let closest = closestMusics(meanMusics, normalized, stats, 5);
-console.log(closest);
+
 
 /*Object.entries(stats).forEach(([playlist, st]) => {
 	console.log(Object.entries(st).sort(([vb1, vl1], [vb2, vl2]) => vl2.variance - vl1.variance));
@@ -682,20 +680,73 @@ let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/m
 
 
 
-// console.log(bestMeanPositionSong);
-console.log(isTop15);
-// console.log(data2);
 
-// let meanPosInf15 = getMeanPosInf15(meanPositions);
-// console.log(meanPosInf15);
+/* Fonctions pour le serveur */
 
-/*app.use(express.static('public'));
+app.use(express.static('public'));
 
 app.get('/data.json', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
 	res.end(JSON.stringify(data));
 });
 
+
+// 2_1_1
+app.get('/getPositionsPic', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let positionsPic = getPositionsPic(data);
+	res.end(JSON.stringify(positionsPic));
+});
+
+// 2_1_2
+app.get('/getIsTop15', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let positionsPic = getPositionsPic(data);
+	let isTop15 = getIsTop15(positionsPic);
+	res.end(JSON.stringify(isTop15));
+});
+
+// 2_1_3
+app.get('/getTimeAppeared', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let timeAppeared = getTimeAppeared(data);
+	res.end(JSON.stringify(timeAppeared));
+});
+
+// 2_1_4
+app.get('/getMeanPositions', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let meanPositions = getMeanPositions(data);
+	res.end(JSON.stringify(meanPositions));
+});
+
+// 2_1_5
+app.get('/getMeanPosInf15', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let meanPositions = getMeanPositions(data);
+	let isTop15 = getMeanPosInf15(meanPositions);
+	res.end(JSON.stringify(isTop15));
+});
+
+
+// 2_2_2
+app.get('/getMeanMusics', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let meanMusics = getMeanMusics(data2);
+	res.end(JSON.stringify(meanMusics));
+});
+
+// 2_2_3
+app.get('/getBestMeanPositionSong', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let meanPositions = getMeanPositions(data);
+	let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
+	res.end(JSON.stringify(bestMeanPositionSong));
+});
+
 app.listen(port, () => {
-	console.log('wesh');
-});*/
+	console.log('Serveur online');
+});
+
+
+console.log(bestMeanPositionSong);
