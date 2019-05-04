@@ -1,9 +1,9 @@
 function formateDate(d) {
 	let date = new Date(d);
-	return (date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear()); // Month +1 car les mois commecent à 
+	return (date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear()); // Month +1 car les mois commecent à 0
 }
 
-function addRapportText(questionNumber) {
+/*function addRapportText(questionNumber) {
 	fetch('/contentFile', {
 		headers: new Headers({
 			'fileName': 'rapport/' + questionNumber + '.txt'
@@ -26,17 +26,15 @@ function addRapportCode(questionNumber) {
 			let rapport = document.getElementById(questionNumber + '_code');
 			rapport.innerHTML = res;
 		});
-}
+}*/
 
 onload = () => {
-
 	document.getElementById('question2_1_1').addEventListener('click', () => {
 		const result = document.getElementById('resultQuestion2_1_1');
 		result.innerHTML = '';
 		fetch('/getPositionsPic')
 			.then(res => res.json())
 			.then(res => {
-
 				for(let [playlist, songsUrl] of Object.entries(res)) {
 					let elemPlaylist = document.createElement('div');
 					let elemTitlePlaylist = document.createElement('h6');
@@ -46,7 +44,7 @@ onload = () => {
 
 					for(let [songsURL, positionPic] of Object.entries(songsUrl)) {
 						let elemLine = document.createElement('p');
-						elemLine.innerHTML = songsURL + ' : ' + '<span class="toBold">' + positionPic + '</span>';
+						elemLine.innerHTML = `${songsURL} : <span class="toBold">${positionPic}</span>`;
 						elemPlaylist.appendChild(elemLine);
 					}
 
@@ -72,11 +70,7 @@ onload = () => {
 
 					for(let [songsURL, isTop15] of Object.entries(songsUrl)) {
 						let elemLine = document.createElement('p');
-						if(isTop15 == true) {
-							elemLine.innerHTML = '<span class="colorTrue">' + songsURL + '<span class="toBold"> : ' + isTop15 + '</span> </span>';
-						} else {
-							elemLine.innerHTML = '<span class="colorFalse">' + songsURL + '<span class="toBold"> : ' + isTop15 + '</span> </span>';
-						}
+						elemLine.innerHTML = `<span class="color${isTop15 ? 'True' : 'False'}">${songsURL}<span class="toBold"> : ${isTop15}</span> </span>`;
 						elemPlaylist.appendChild(elemLine);
 					}
 
@@ -92,7 +86,6 @@ onload = () => {
 		fetch('/getTimeAppeared')
 			.then(res => res.json())
 			.then(res => {
-
 				for(let [playlist, songsUrl] of Object.entries(res)) {
 					let elemPlaylist = document.createElement('div');
 					let elemTitlePlaylist = document.createElement('h6');
@@ -102,13 +95,12 @@ onload = () => {
 
 					for(let [songsURL, timeAppeared] of Object.entries(songsUrl)) {
 						let elemLine = document.createElement('p');
-						elemLine.innerHTML = songsURL + ' : ' + '<span class="toBold">' + timeAppeared + '</span>';
+						elemLine.innerHTML = `${songsURL} : <span class="toBold">${timeAppeared}</span>`;
 						elemPlaylist.appendChild(elemLine);
 					}
 
 					result.appendChild(elemPlaylist);
 				}
-
 			});
 	});
 
@@ -118,7 +110,6 @@ onload = () => {
 		fetch('/getMeanPositions')
 			.then(res => res.json())
 			.then(res => {
-
 				for(let [playlist, songsUrl] of Object.entries(res)) {
 					let elemPlaylist = document.createElement('div');
 					let elemTitlePlaylist = document.createElement('h6');
@@ -128,13 +119,12 @@ onload = () => {
 
 					for(let [songsURL, meanPosition] of Object.entries(songsUrl)) {
 						let elemLine = document.createElement('p');
-						elemLine.innerHTML = songsURL + ' : ' + '<span class="toBold">' + meanPosition + '</span>';
+						elemLine.innerHTML = `${songsURL} : <span class="toBold">${meanPosition}</span>`;
 						elemPlaylist.appendChild(elemLine);
 					}
 
 					result.appendChild(elemPlaylist);
 				}
-
 			});
 	});
 
@@ -144,7 +134,6 @@ onload = () => {
 		fetch('/getMeanPosInf15')
 			.then(res => res.json())
 			.then(res => {
-				
 				for(let [playlist, songsUrl] of Object.entries(res)) {
 					let elemPlaylist = document.createElement('div');
 					let elemTitlePlaylist = document.createElement('h6');
@@ -154,17 +143,12 @@ onload = () => {
 
 					for(let [songsURL, isTop15] of Object.entries(songsUrl)) {
 						let elemLine = document.createElement('p');
-						if(isTop15 == true) {
-							elemLine.innerHTML = '<span class="colorTrue">' + songsURL + '<span class="toBold"> : ' + isTop15 + '</span> </span>';
-						} else {
-							elemLine.innerHTML = '<span class="colorFalse">' + songsURL + '<span class="toBold"> : ' + isTop15 + '</span> </span>';
-						}
+						elemLine.innerHTML = `<span class="color${isTop15 ? 'True' : 'False'}">${songsURL}<span class="toBold"> : ${isTop15}</span> </span>`;
 						elemPlaylist.appendChild(elemLine);
 					}
 
 					result.appendChild(elemPlaylist);
 				}
-
 			});
 	});
 
@@ -174,7 +158,6 @@ onload = () => {
 		fetch('/getMeanMusics')
 			.then(res => res.json())
 			.then(res => {
-
 				for(let [playlist, musicCaracteristics] of Object.entries(res)) {
 					let elemPlaylist = document.createElement('div');
 					let elemTitlePlaylist = document.createElement('h6');
@@ -190,7 +173,6 @@ onload = () => {
 
 					result.appendChild(elemPlaylist);
 				}
-
 			});
 	});
 
@@ -200,7 +182,6 @@ onload = () => {
 		fetch('/getBestMeanPositionSong')
 			.then(res => res.json())
 			.then(res => {
-
 				for(let [playlist, music] of Object.entries(res)) {
 					let elemPlaylist = document.createElement('div');
 					let elemTitlePlaylist = document.createElement('h6');
@@ -216,7 +197,6 @@ onload = () => {
 
 					result.appendChild(elemPlaylist);
 				}
-
 			});
 	});
 
@@ -255,10 +235,7 @@ onload = () => {
 		fetch('/getSongEvolution')
 			.then(res => res.json())
 			.then(res => {
-
-				res.sort((a, b) => {
-					return new Date(a.date) - new Date(b.date);
-				});
+				res.sort((a, b) => new Date(a.date) - new Date(b.date));
 
 				let canvas = document.createElement('canvas');
 				let ctx = canvas.getContext('2d');
@@ -282,7 +259,7 @@ onload = () => {
 
 	//addRapportText('2_1_1');
 
-	document.getElementById('test2').addEventListener('click', () => {
+	/*document.getElementById('test2').addEventListener('click', () => {
 		fetch('/contentFile', {
 			headers: new Headers({
 				'fileName': 'rapport/2_1_1.txt'
@@ -293,6 +270,6 @@ onload = () => {
 				let rapport = document.getElementById('2_1_1_rapport');
 				rapport.innerHTML = res;
 			});
-	});
+	});*/
 };
 

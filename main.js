@@ -5,6 +5,9 @@
 const fs = require('fs'),
 	PCA = require('ml-pca'),
 	{ DecisionTreeClassifier } = require('ml-cart'),
+	FNN = require('ml-fnn'),
+	KNN = require('ml-knn'),
+	crossValidation = require('ml-cross-validation'),
 	express = require('express'),
 	app = express(),
 	port = 8080;
@@ -400,18 +403,7 @@ function euclidianDistanceNormalized(m) {
  * @param {*} mean Chanson moyenne (non normalisée)
  * @param {Data} data Données normalisées
  */
-function closestMusics(mean, data, stats, k) {
-	// Normaliser
-	/*let normalizedMean = {};
-
-	for(let [playlist, infos] of Object.entries(mean)) {
-		normalizedMean[playlist] = {};
-		for(let [variable, valeur] of Object.entries(infos)) {
-			console.log(variable, valeur, stats[playlist][variable].mean, stats[playlist][variable].standardDeviation);
-			normalizedMean[playlist][variable] = (valeur - stats[playlist][variable].mean) / stats[playlist][variable].standardDeviation;
-		}
-	}*/
-
+function kClosestMusicsWithNormalisedData(data, k) {
 	let sortedData = {};
 
 	for(let [playlist, songs] of Object.entries(data)) {
@@ -583,79 +575,88 @@ function shuffle(a, b) {
 // let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
 let data = parseData();
-console.log(data.fr);
-return;
+addVariables(data);
+// console.log(data.metal['https://www.spotontrack.com/track/my-own-summer-shove-it/18052']);
 let positions = getPositions(data);
 let positionsPic = getPositionsPic(data);
 let isTop15 = getIsTop15(positionsPic);
 let timeAppeared = getTimeAppeared(data);
-let meanPositions = getMeanPositions(data, positions);
+let meanPositions = getMeanPositions(positions);
 let meanPosInf15 = getMeanPosInf15(meanPositions);
 let data2 = addColumns(data);
 let stats = getStats(data2);
 let normalized = normalize(data2, stats);
 let meanMusics = getMeanMusics(data2);
-let closest = closestMusics(meanMusics, normalized, stats, 5);
+let closest = kClosestMusicsWithNormalisedData(normalized, 5);
 
-Object.entries(stats).forEach(([playlist, st]) => {
+/*Object.entries(stats).forEach(([playlist, st]) => {
 	console.log(Object.entries(st).sort(([vb1, vl1], [vb2, vl2]) => vl2.variance - vl1.variance));
-});
+});*/
 
 let meanMusicsPerPlaylist = getMeanMusics(data2);
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
-let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+// console.log(musicEvolution);
 
 //
 
 
-let names = Object.keys(data2);
-let moyenne = 0, total = 10;
+// let names = Object.keys(data2);
+// let moyenne = 0, total = 1;
 
-for(let i = 0; i < total; i++) {
-	let dataset = [];
-	let predictions = [];
-	Object.entries(data2).forEach(([name, playlist]) => {
-		for(let d of Object.values(playlist)) {
-			let u = [];
-			for(let [variable, valeur] of Object.entries(d))
-				if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode',*/ 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
-					u.push(valeur);
-			dataset.push(u);
-			predictions.push(names.indexOf(name));
-		}
-	});
-	shuffle(dataset, predictions);
+// for(let i = 0; i < total; i++) {
+// 	let dataset = [];
+// 	let predictions = [];
+// 	Object.entries(data2).forEach(([name, playlist]) => {
+// 		for(let d of Object.values(playlist)) {
+// 			let u = [];
+// 			for(let [variable, valeur] of Object.entries(d))
+// 				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
+// 					u.push(valeur);
+// 			dataset.push(u);
+// 			predictions.push(names.indexOf(name));
+// 		}
+// 	});
+// 	shuffle(dataset, predictions);
 
-	let separator = Math.floor(4 * dataset.length / 5);
-	let trainingSet = dataset.slice(0, separator);
-	let trainingPrediction = predictions.slice(0, separator);
-	let testSet = dataset.slice(separator);
-	let testPrediction = predictions.slice(separator);
+// 	// let separator = Math.floor(4 * dataset.length / 5);
+// 	// let trainingSet = dataset.slice(0, separator);
+// 	// let trainingPrediction = predictions.slice(0, separator);
+// 	// let testSet = dataset.slice(separator);
+// 	// let testPrediction = predictions.slice(separator);
 
-	let classifier = new DecisionTreeClassifier({
-		gainFunction: 'gini',
-		maxDepth: 10,
-		minNumSamples: 3
-	});
 
-	classifier.train(trainingSet, trainingPrediction);
-	let result = classifier.predict(testSet);
+// 	let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
+// 	for(let i = 0; i < names.length; i++)
+// 		console.log(names[i], confusionMarix.getConfusionTable(i));
+// 	let pgood = confusionMarix.getAccuracy();
+// 	moyenne += pgood;
+// 	// console.log(pgood);
+	
 
-	let good = 0, bad = 0;
+// 	/*
+// 	let classifier = new DecisionTreeClassifier();
 
-	for(let i = 0; i < testSet.length; i++) {
-		if(result[i] === testPrediction[i])
-			good++;
-		else
-			bad++;
-	}
+// 	classifier.train(trainingSet, trainingPrediction);
+// 	let result = classifier.predict(testSet);
 
-	let pgood = (good / (good + bad));
-	moyenne += pgood;
-	console.log(`good: ${good} (${(pgood * 100).toPrecision(3)}), bad: ${bad} (${((1 - pgood) * 100).toPrecision(3)}), total: ${good + bad}`);
-}
-moyenne /= total;
-console.log(`total - good: ${(moyenne * 100).toPrecision(3)}, bad: ${((1 - moyenne) * 100).toPrecision(3)}`);
+// 	let good = 0, bad = 0;
+
+// 	for(let i = 0; i < testSet.length; i++) {
+// 		if(result[i] === testPrediction[i])
+// 			good++;
+// 		else
+// 			bad++;
+// 	}
+
+// 	let pgood = (good / (good + bad));
+// 	moyenne += pgood;
+// 	console.log(`good: ${good} (${(pgood * 100).toPrecision(3)}), bad: ${bad} (${((1 - pgood) * 100).toPrecision(3)}), total: ${good + bad}`);
+// 	console.log(classifier.toJSON());
+// 	*/
+// }
+// moyenne /= total;
+// console.log(`total - good: ${(moyenne * 100).toPrecision(3)}, bad: ${((1 - moyenne) * 100).toPrecision(3)}`);
 
 
 /* Fonctions pour le serveur */
@@ -665,63 +666,63 @@ app.use(express.static('public'));
 // 2_1_1
 app.get('/getPositionsPic', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let positionsPic = getPositionsPic(data);
+	// let positionsPic = getPositionsPic(data);
 	res.end(JSON.stringify(positionsPic));
 });
 
 // 2_1_2
 app.get('/getIsTop15', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let positionsPic = getPositionsPic(data);
-	let isTop15 = getIsTop15(positionsPic);
+	// let positionsPic = getPositionsPic(data);
+	// let isTop15 = getIsTop15(positionsPic);
 	res.end(JSON.stringify(isTop15));
 });
 
 // 2_1_3
 app.get('/getTimeAppeared', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let timeAppeared = getTimeAppeared(data);
+	// let timeAppeared = getTimeAppeared(data);
 	res.end(JSON.stringify(timeAppeared));
 });
 
 // 2_1_4
 app.get('/getMeanPositions', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let positions = getPositions(data);
-	let meanPositions = getMeanPositions(positions);
+	// let positions = getPositions(data);
+	// let meanPositions = getMeanPositions(positions);
 	res.end(JSON.stringify(meanPositions));
 });
 
 // 2_1_5
 app.get('/getMeanPosInf15', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let positions = getPositions(data);
-	let meanPositions = getMeanPositions(positions);
-	let isTop15 = getMeanPosInf15(meanPositions);
-	res.end(JSON.stringify(isTop15));
+	// let positions = getPositions(data);
+	// let meanPositions = getMeanPositions(positions);
+	// let isTop15 = getMeanPosInf15(meanPositions);
+	res.end(JSON.stringify(meanPosInf15));
 });
 
 
 // 2_2_2
 app.get('/getMeanMusics', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let meanMusics = getMeanMusics(data2);
-	res.end(JSON.stringify(meanMusics));
+	// let meanMusics = getMeanMusics(data2);
+	res.end(JSON.stringify(meanMusicsPerPlaylist));
 });
 
 // 2_2_3
 app.get('/getBestMeanPositionSong', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let positions = getPositions(data);
-	let meanPositions = getMeanPositions(positions);
-	let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
+	// let positions = getPositions(data);
+	// let meanPositions = getMeanPositions(positions);
+	// let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 	res.end(JSON.stringify(bestMeanPositionSong));
 });
 
 // 2_2_4
 app.get('/getSongEvolution', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+	// let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
 	res.end(JSON.stringify(songEvolution));
 });
 
