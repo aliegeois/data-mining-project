@@ -201,38 +201,45 @@ onload = () => {
 	});
 
 	// Création du select avec toute les chansons possibles
-	/*
-	document.getElementById('test').addEventListener('click', () => {
-		let question_2_2_4_select = document.getElementById('question2_2_4_select');
-		fetch('/data.json')
-			.then(res => res.json())
-			.then(res => {
-				console.log('FLAG A');
-				for(let [playlist, music] of Object.entries(res)) {
-					console.log('FLAG B');
-					let selectCategory = document.createElement('optgroup');
-					selectCategory.setAttribute('label', playlist);
-					console.log('Playlist : ' + playlist);
-					for(let [musicURL, musicCaracteristics] of Object.entries(music)) {
-						console.log('Music : ' + musicURL);
-						let selectLine = document.createElement('option');
-						selectLine.setAttribute('value', musicURL);
-						selectLine.appendChild(document.createTextNode(musicURL));
-						selectCategory.appendChild(selectLine);
-					}
+	
+	// document.getElementById('test').addEventListener('click', () => {
+	// 	let question_2_2_4_select = document.getElementById('question2_2_4_select');
+	// 	fetch('/data.json')
+	// 		.then(res => res.json())
+	// 		.then(res => {
+	// 			for(let [playlist, music] of Object.entries(res)) {
+	// 				let selectCategory = document.createElement('optgroup');
+	// 				selectCategory.setAttribute('label', playlist);
+	// 				console.log('Playlist : ' + playlist);
+	// 				for(let [musicURL, musicCaracteristics] of Object.entries(music)) {
+	// 					console.log('Music : ' + musicURL);
+	// 					let selectLine = document.createElement('option');
+	// 					selectLine.setAttribute('value', musicURL);
+	// 					selectLine.appendChild(document.createTextNode(musicURL));
+	// 					selectCategory.appendChild(selectLine);
+	// 				}
 
-					question_2_2_4_select.appendChild(selectCategory);
-				}
+	// 				question_2_2_4_select.appendChild(selectCategory);
+	// 			}
 
-			});
-	});
-	*/
+	// 		});
+	// });
+	
 
 
 	document.getElementById('question2_2_4').addEventListener('click', () => {
 		const result = document.getElementById('resultQuestion2_2_4');
 		result.innerHTML = '';
-		fetch('/getSongEvolution')
+		let s = document.getElementById('question2_2_4_select');
+		let selectedSong = s[s.selectedIndex].value;
+		let selectedPlaylist = s[s.selectedIndex].parentNode.getAttribute('label');
+
+		fetch('/getSongEvolution', {
+			headers: new Headers({
+				'song' : selectedSong,
+				'playlist' : selectedPlaylist
+			})
+		})
 			.then(res => res.json())
 			.then(res => {
 				res.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -241,6 +248,15 @@ onload = () => {
 				let ctx = canvas.getContext('2d');
 				new Chart(ctx, {
 					type: 'line',
+					options: {
+						scales: {
+							yAxes: [{
+								ticks: {
+									reverse: true,
+								}
+							}]
+						}
+					},
 					data: {
 						labels: res.map(e => formateDate(e.date)),
 						datasets: [{
