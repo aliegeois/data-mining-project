@@ -597,7 +597,7 @@ let closest = kClosestMusicsWithNormalisedData(normalized, 5);
 let meanMusicsPerPlaylist = getMeanMusics(data2);
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
-// console.log(musicEvolution);
+console.log(closest);
 
 //
 
@@ -716,6 +716,15 @@ app.get('/getMeanMusics', (req, res) => {
 	// let meanMusics = getMeanMusics(data2);
 	res.end(JSON.stringify(meanMusicsPerPlaylist));
 });
+app.get('/kClosestMusicsWithNormalisedData', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	// let data2 = addColumns(data);
+	// let stats = getStats(data2);
+	// let normalized = normalize(data2, stats);
+	// let meanMusics = getMeanMusics(data2);
+	// let closest = kClosestMusicsWithNormalisedData(normalized, 5);
+	res.end(JSON.stringify(closest));
+});
 
 // 2_2_3
 app.get('/getBestMeanPositionSong', (req, res) => {
@@ -735,6 +744,8 @@ app.get('/getSongEvolution', (req, res) => {
 	let chosenSongEvolution = getSongEvolution(data, chosenSong, chosenPlaylist);
 	res.end(JSON.stringify(chosenSongEvolution));
 });
+
+// 
 
 /* Function for the notebook */
 app.get('/contentFile', (req, res) => {

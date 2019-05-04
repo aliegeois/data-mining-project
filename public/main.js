@@ -176,6 +176,35 @@ onload = () => {
 			});
 	});
 
+	document.getElementById('question2_2_2_closest').addEventListener('click', () => {
+		console.log('a');
+		const result = document.getElementById('resultQuestion2_2_2');
+		result.innerHTML = '';
+		fetch('/kClosestMusicsWithNormalisedData')
+			.then(res => res.json())
+			.then(res => {
+				for(let [playlist, musics] of Object.entries(res)) {
+					let elemPlaylist = document.createElement('div');
+					let elemTitlePlaylist = document.createElement('h6');
+					let titlePlaylist = document.createTextNode('Pour la playlist ' + playlist);
+					elemTitlePlaylist.appendChild(titlePlaylist);
+					elemPlaylist.appendChild(elemTitlePlaylist);
+
+					for(let [key, value] of Object.entries(musics)) {
+						// Value = line in the array
+						let elemLine = document.createElement('p');
+						elemLine.innerHTML = '<span style="color: #ef6c00; font-weight: bold;">Music : </span>' + value.url;
+						elemPlaylist.appendChild(elemLine);
+						elemLine = document.createElement('p');
+						elemLine.innerHTML = 'Distance : ' + value.distance;
+						elemPlaylist.appendChild(elemLine);
+					}
+
+					result.appendChild(elemPlaylist);
+				}
+			});
+	});
+
 	document.getElementById('question2_2_3').addEventListener('click', () => {
 		const result = document.getElementById('resultQuestion2_2_3');
 		result.innerHTML = '';
