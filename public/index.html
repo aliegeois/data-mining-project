@@ -13,6 +13,55 @@
 	<body>
 
 		<!-- <a id="test2" class="waves-effect btn buttons">Test</a> -->
+		<h3>Structure de données</h3>
+		<div class="rapport">
+			<p>Pour faciliter l'accès aux données, les 2 fichiers `playlists` et `tracks` sont fusionnés dans une seule structure de données.
+			Ceci est plus pratique pour accéder aux propriétés des musiques depuis la playlist.</p>
+			La structure de données utilisée est du JSON sous la forme suivante:
+			<pre class="codeSample">	"fr": {
+		"https://www.spotontrack.com/track/la-marcheuse/42943174": {
+			title: "La marcheuse",
+			artists: "Christine and the Queens",
+			BPM: 107,
+			<span class="comment">…</span>
+			positions: [{
+				date: 2018-09-26T00:00:00.000Z, position: 2
+			}, {
+				date: 2018-10-03T00:00:00.000Z, position: 3
+			}, <span class="comment">…</span>]
+		},
+		"https://www.spotontrack.com/track/mojo/43473376": {
+			<span class="comment">…</span>
+		},
+		<span class="comment">…</span>
+	},
+	"jazz": {
+		<span class="comment">…</span>
+	},
+	"lovepop": {
+		<span class="comment">…</span>
+	},
+	"electro": {
+		<span class="comment">…</span>
+	},
+	"metal": {
+		<span class="comment">…</span>
+	}</pre>
+		Cette structure nous permet de séparer les différentes playlists, ainsi l'appel à `data.fr` renvoie toutes les chansons de la playlist fr.
+		<select>
+			<optgroup label="1">
+				<option value="a">a</option>
+				<option value="b">b</option>
+			</optgroup>
+			<optgroup label="2">
+					<option value="c">c</option>
+					<option value="d">d</option>
+				</optgroup>
+		</select>
+		</div>
+		
+
+
 		<!-- 2.1 -->
 		<h3>Préparation des données</h3>
 
@@ -35,7 +84,7 @@
 			<p>En JavaScript, nous parcourons notre structure avec des for de cette manière :</p>
 			<div class="codeSample">
 					for(let [playlist, songs] of Object.entries(data)) { <br />
-						&nbsp;&nbsp;<span class="comment">//Du code utilisant playlist et/ou songs</span> <br />
+						&nbsp;&nbsp;<span class="comment">// Du code utilisant playlist et/ou songs</span> <br />
 					} <br />
 			</div>
 			<p>Si data est, par exemple, de cette forme :</p>

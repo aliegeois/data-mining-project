@@ -12,7 +12,7 @@ const fs = require('fs'),
 	app = express(),
 	port = 8080;
 
-function removeQuotes(data) { // Gère les guillemets
+function parseRaw(data) { // Gère les guillemets
 	let clean = '',
 		string = false,
 		//unicode = -1,
@@ -59,12 +59,11 @@ function removeQuotes(data) { // Gère les guillemets
 	return clean;
 }
 
-function remove13(buffer) { // Enlève les retours chariot
+function remove13(buffer) { // Enlève les retours chariot (\r)
 	let clean = [];
-	for(let i of buffer) {
+	for(let i of buffer)
 		if(i !== 13)
 			clean.push(i);
-	}
 
 	return Buffer.from(clean);
 }
@@ -463,8 +462,8 @@ function getSongEvolution(data, song, playlist_name) {
  * @returns {}
  */
 function parseData() {
-	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
-	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
+	const raw_playlists = parseRaw(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
+	const raw_tracks = parseRaw(fs.readFileSync('data/tracks.data').toString()).split('\n');
 	raw_playlists.pop(); // La dernière ligne est vide, il faut la supprimer
 	raw_tracks.pop();
 
@@ -576,6 +575,8 @@ function shuffle(a, b) {
 
 let data = parseData();
 addVariables(data);
+// console.log(Object.entries(data.fr)[1][1].positions);
+// return;
 // console.log(data.metal['https://www.spotontrack.com/track/my-own-summer-shove-it/18052']);
 let positions = getPositions(data);
 let positionsPic = getPositionsPic(data);
