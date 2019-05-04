@@ -1,7 +1,9 @@
 const fs = require('fs'),
-	PCA = require('pca-js'),
+	PCA = require('ml-pca'),
+	{ DecisionTreeClassifier } = require('ml-cart'),
+	{ RandomForestClassifier } = require('ml-random-forest'),
 	express = require('express'),
-	sklearn = require('jskit-learn'),
+	// sklearn = require('jskit-learn'),
 	app = express(),
 	port = 8080;
 
@@ -216,7 +218,7 @@ function getTimeAppeared(data) {
  * ses positions...
  * @param {Object} data
  */
-function getMeanPositions(data) {
+function getMeanPositions(data, positions) {
 	let meanPositions = {};
 	for(let [playlist_name, song] of Object.entries(positions)) {
 		let myMap;
@@ -385,7 +387,7 @@ function euclidianDistance(m1, m2) {
 function euclidianDistanceNormalized(m) {
 	let sum = 0;
 	for(let i of ['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'])
-		sum += m[i]*m[i];
+		sum += m[i] * m[i];
 	return Math.sqrt(sum);
 }
 
@@ -432,7 +434,6 @@ function closestMusics(mean, data, stats, k) {
  * Prend meanPositions en paramètre
  */
 function getBestMeanPositionSong(meanPos) {
-
 	let bestMeanPositionSong = {};
 
 	for(let [playlist_name, song] of Object.entries(meanPos)) {
@@ -448,7 +449,6 @@ function getBestMeanPositionSong(meanPos) {
 	}
 	
 	return bestMeanPositionSong;
-
 }
 
 
@@ -461,24 +461,6 @@ function getBestMeanPositionSong(meanPos) {
  */
 function getSongEvolution(data, song, playlist_name) {
 	return Object.values(data[playlist_name][song].positions); // Nous retournons la liste des positions associées à la playlist et à la musique demandée
-}
-
-/**
- * 
- * @param {*} data Données (noralisées ou non)
- * @param {number} nbDimensions Nombre de dimensions
- */
-function dimensionReduction(data, nbDimensions) {
-	let d_array = [];
-	for(let [playlist, songs] of Object.entries(data)) {
-		for(let infos of Object.values(songs)) {
-			for(let [variable, valeur] of Object.entries(infos)) {
-				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable)) {
-					stats[playlist][variable].variance += Math.pow(valeur - stats[playlist][variable].mean, 2); // Variance
-				}
-			}
-		}
-	}
 }
 
 
@@ -656,46 +638,177 @@ function parseData2() {
 	return data;
 }
 
+/**
+ * Shuffles array in place. ES6 version
+ * @param {Array} a items An array containing the items.
+ */
+function shuffle(a, b) {
+	for(let i = a.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[a[i], a[j]] = [a[j], a[i]];
+		[b[i], b[j]] = [b[j], b[i]];
+	}
+	return a;
+}
+
 // let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
 let data = parseData2();
-let positions = getPositions2(data);
-let positionsPic = getPositionsPic(data);
-let isTop15 = getIsTop15(positionsPic);
-let timeAppeared = getTimeAppeared(data);
-let meanPositions = getMeanPositions(data);
-let meanPosInf15 = getMeanPosInf15(meanPositions);
+// let positions = getPositions2(data);
+// let positionsPic = getPositionsPic(data);
+// let isTop15 = getIsTop15(positionsPic);
+// let timeAppeared = getTimeAppeared(data);
+// let meanPositions = getMeanPositions(data, positions);
+// let meanPosInf15 = getMeanPosInf15(meanPositions);
 let data2 = addColumns(data);
-let stats = getStats(data2);
-let normalized = normalize(data2, stats);
-let meanMusics = getMeanMusics(data2);
-let closest = closestMusics(meanMusics, normalized, stats, 5);
-console.log(closest);
+// let stats = getStats(data2);
+// let normalized = normalize(data2, stats);
+// let meanMusics = getMeanMusics(data2);
+// let closest = closestMusics(meanMusics, normalized, stats, 5);
+// console.log(closest);
 
 /*Object.entries(stats).forEach(([playlist, st]) => {
 	console.log(Object.entries(st).sort(([vb1, vl1], [vb2, vl2]) => vl2.variance - vl1.variance));
 });*/
 
-let meanMusicsPerPlaylist = getMeanMusics(data2);
-let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
-let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+// let meanMusicsPerPlaylist = getMeanMusics(data2);
+// let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
+// let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+// console.log(musicEvolution);
+
+// console.log(data2.fr);
+// console.log(fr);
+
+// let fr = Object.values(data2.fr).map(e => {
+// 	let u = [];
+// 	for(let [variable, valeur] of Object.entries(e))
+// 		if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
+// 			u.push(valeur);
+// 	return u;
+// });
+
+// let dataset = shuffle(Object.values(data2).flat().map(e => {
+// 	let u = [];
+// 	for(let [variable, valeur] of Object.entries(e))
+// 		if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
+// 			u.push(valeur);
+// 	return u;
+// }));
+
+// console.log(data2.fr);
+
+
+//
+let names = Object.keys(data2);
+let moyenne = 0, total = 10;
+
+for(let i = 0; i < total; i++) {
+	let dataset = [];
+	let predictions = [];
+	Object.entries(data2).forEach(([name, playlist]) => {
+		for(let d of Object.values(playlist)) {
+			let u = [];
+			for(let [variable, valeur] of Object.entries(d))
+				if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode',*/ 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
+					u.push(valeur);
+			dataset.push(u);
+			predictions.push(names.indexOf(name));
+		}
+	});
+	shuffle(dataset, predictions);
+	// console.log(dataset);
+	// console.log(predictions);
+
+	let separator = Math.floor(4 * dataset.length / 5);
+	let trainingSet = dataset.slice(0, separator);
+	let trainingPrediction = predictions.slice(0, separator);
+	let testSet = dataset.slice(separator);
+	let testPrediction = predictions.slice(separator);
+
+	// console.log(trainingSet);
+
+	let classifier = new DecisionTreeClassifier({
+		gainFunction: 'gini',
+		maxDepth: 10,
+		minNumSamples: 3
+	});
+
+	classifier.train(trainingSet, trainingPrediction);
+	let result = classifier.predict(testSet);
+	// console.log(result.length, testSet.length);
+
+	let good = 0, bad = 0;
+
+	for(let i = 0; i < testSet.length; i++) {
+		if(result[i] === testPrediction[i])
+			good++;
+		else
+			bad++;
+	}
+
+	let pgood = (good / (good + bad));
+	moyenne += pgood;
+	console.log(`good: ${good} (${(pgood * 100).toPrecision(3)}), bad: ${bad} (${((1 - pgood) * 100).toPrecision(3)}), total: ${good + bad}`);
+}
+moyenne /= total;
+console.log(`total - good: ${(moyenne * 100).toPrecision(3)}, bad: ${((1 - moyenne) * 100).toPrecision(3)}`);
+
+// console.log(names[result[i]] + '\t' + names[testPrediction[i]]);
+
+//
+
+// var irisDataset = require('ml-dataset-iris');
+
+// var trainingSet = irisDataset.getNumbers();
+// var predictions = irisDataset
+// 	.getClasses()
+// 	.map((elem) => irisDataset.getDistinctClasses().indexOf(elem));
+
+// console.log(trainingSet);
+// console.log(predictions);
+
+// var options = {
+// 	gainFunction: 'gini',
+// 	maxDepth: 10,
+// 	minNumSamples: 3
+// };
+
+// var classifier = new DecisionTreeClassifier(options);
+// classifier.train(trainingSet, predictions);
+// var result = classifier.predict(trainingSet);
+// // console.log(result);
+
+
+// let dataset = require('ml-dataset-iris').getNumbers();
+// let pca = new PCA(dataset);
+// console.log(pca.getExplainedVariance());
+
+// console.log(fr);
+// const pca = new PCA(fr);
+// console.log(pca.getExplainedVariance());
 
 
 
 // console.log(bestMeanPositionSong);
-console.log(isTop15);
+// console.log(isTop15);
 // console.log(data2);
 
 // let meanPosInf15 = getMeanPosInf15(meanPositions);
 // console.log(meanPosInf15);
 
-/*app.use(express.static('public'));
 
-app.get('/data.json', (req, res) => {
-	res.setHeader('Content-Type', 'application/json');
-	res.end(JSON.stringify(data));
-});
+// app.use(express.static('public'));
 
-app.listen(port, () => {
-	console.log('wesh');
-});*/
+// app.get('/data.json', (req, res) => {
+// 	res.setHeader('Content-Type', 'application/json');
+// 	res.end(JSON.stringify(data));
+// });
+
+// app.get('/getfr', (request, response) => {
+// 	response.setHeader('Content-Type', 'application/json');
+// 	response.end(JSON.stringify(data2.fr));
+// });
+
+// app.listen(port, () => {
+// 	console.log('wesh');
+// });

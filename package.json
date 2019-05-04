@@ -8,8 +8,8 @@
 	"dependencies": {
 		"eslint": "^5.15.3",
 		"express": "^4.16.4",
-		"jskit-learn": "^0.9.4",
-		"pca-js": "^1.0.2"
+		"ml": "^3.5.0",
+		"ml-dataset-iris": "^1.0.0"
 	},
 	"repository": {
 		"type": "git",
