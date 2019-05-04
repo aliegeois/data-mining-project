@@ -4,7 +4,9 @@
 
 const fs = require('fs'),
 	PCA = require('ml-pca'),
-	{ DecisionTreeClassifier } = require('ml-cart'),
+	{ DecisionTreeClassifier, DecisionTreeRegression } = require('ml-cart'),
+	{ RandomForestRegression } = require('ml-random-forest'),
+	MLR = require('ml-regression-multivariate-linear'),
 	FNN = require('ml-fnn'),
 	KNN = require('ml-knn'),
 	crossValidation = require('ml-cross-validation'),
@@ -522,10 +524,8 @@ function parseData() {
 		let line = raw_playlists[i].split('\t');
 
 		let o = { // Déstructuration des objets
-			...{
-				title: line[1].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16))), // Convertir les caractères unicodes
-				artists: line[2].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16)))
-			},
+			title: line[1].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16))), // Convertir les caractères unicodes
+			artists: line[2].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16))),
 			...tracks[line[3]]
 		};
 		if(data.hasOwnProperty(line[5])) {
@@ -601,64 +601,102 @@ let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my
 
 //
 
+/**
+ * Coupe les données pour l'entrainement
+ * @param {Data} data
+ * @param {function(Object, string)} column
+ */
+function splitData(data, column) {
+	let dataset = [];
+	let predictions = [];
+	Object.entries(data).forEach(([name, playlist]) => {
+		for(let song of Object.values(playlist)) {
+			let u = [];
+			for(let [variable, valeur] of Object.entries(song))
+				if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
+					u.push(valeur);
+			dataset.push(u);
+			// predictions.push(names.indexOf(name));
+			// predictions.push([d.playlistDuration]);
+			predictions.push(column(song, name));
+		}
+	});
+	shuffle(dataset, predictions);
 
-// let names = Object.keys(data2);
-// let moyenne = 0, total = 1;
+	let separator = Math.floor(4 * dataset.length / 5);
+	// let trainingSet = dataset.slice(0, separator);
+	// let trainingPrediction = predictions.slice(0, separator);
+	// let testSet = dataset.slice(separator);
+	// let testPrediction = predictions.slice(separator);
 
-// for(let i = 0; i < total; i++) {
-// 	let dataset = [];
-// 	let predictions = [];
-// 	Object.entries(data2).forEach(([name, playlist]) => {
-// 		for(let d of Object.values(playlist)) {
-// 			let u = [];
-// 			for(let [variable, valeur] of Object.entries(d))
-// 				if(['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
-// 					u.push(valeur);
-// 			dataset.push(u);
-// 			predictions.push(names.indexOf(name));
-// 		}
-// 	});
-// 	shuffle(dataset, predictions);
-
-// 	// let separator = Math.floor(4 * dataset.length / 5);
-// 	// let trainingSet = dataset.slice(0, separator);
-// 	// let trainingPrediction = predictions.slice(0, separator);
-// 	// let testSet = dataset.slice(separator);
-// 	// let testPrediction = predictions.slice(separator);
+	return {
+		dataset,
+		predictions,
+		trainingSet: dataset.slice(0, separator),
+		trainingPrediction: predictions.slice(0, separator),
+		testSet: dataset.slice(separator),
+		testPrediction: predictions.slice(separator)
+	};
+}
 
 
-// 	let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
-// 	for(let i = 0; i < names.length; i++)
-// 		console.log(names[i], confusionMarix.getConfusionTable(i));
-// 	let pgood = confusionMarix.getAccuracy();
-// 	moyenne += pgood;
-// 	// console.log(pgood);
-	
+let names = Object.keys(data2);
 
-// 	/*
-// 	let classifier = new DecisionTreeClassifier();
-
-// 	classifier.train(trainingSet, trainingPrediction);
-// 	let result = classifier.predict(testSet);
-
-// 	let good = 0, bad = 0;
-
-// 	for(let i = 0; i < testSet.length; i++) {
-// 		if(result[i] === testPrediction[i])
-// 			good++;
-// 		else
-// 			bad++;
+// let dataset = [];
+// let predictions = [];
+// Object.entries(data2).forEach(([name, playlist]) => {
+// 	for(let d of Object.values(playlist)) {
+// 		let u = [];
+// 		for(let [variable, valeur] of Object.entries(d))
+// 			if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
+// 				u.push(valeur);
+// 		dataset.push(u);
+// 		// predictions.push(names.indexOf(name));
+// 		predictions.push([d.playlistDuration]);
 // 	}
+// });
+// shuffle(dataset, predictions);
 
-// 	let pgood = (good / (good + bad));
-// 	moyenne += pgood;
-// 	console.log(`good: ${good} (${(pgood * 100).toPrecision(3)}), bad: ${bad} (${((1 - pgood) * 100).toPrecision(3)}), total: ${good + bad}`);
-// 	console.log(classifier.toJSON());
-// 	*/
-// }
-// moyenne /= total;
-// console.log(`total - good: ${(moyenne * 100).toPrecision(3)}, bad: ${((1 - moyenne) * 100).toPrecision(3)}`);
+// let separator = Math.floor(4 * dataset.length / 5);
+// let trainingSet = dataset.slice(0, separator);
+// let trainingPrediction = predictions.slice(0, separator);
+// let testSet = dataset.slice(separator);
+// let testPrediction = predictions.slice(separator);
 
+let { trainingSet, trainingPrediction, testSet, testPrediction } = splitData(data, d => [d.playlistDuration]);
+let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
+
+// console.log(trainingSet, trainingPrediction);
+
+
+let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
+for(let i = 0; i < names.length; i++)
+	console.log(names[i], confusionMarix.getConfusionTable(i));
+console.log('accuracy:', confusionMarix.getAccuracy());
+
+let ybar = 0;
+for(let [i] of testPrediction)
+	ybar += i;
+ybar /= testPrediction.length;
+
+
+let regressor = new MLR(trainingSet, trainingPrediction);
+// let regressor = new DecisionTreeRegression();
+// regressor.train(trainingSet, trainingPrediction);
+
+// classifier.train(trainingSet, trainingPrediction);
+let result = regressor.predict(testSet);
+// console.log('score', regressor.score());
+
+let num = 0, den = 0;
+for(let i = 0; i < result.length; i++) {
+	// console.log(testPrediction[i][0], result[i][0]);
+	num += Math.pow(testPrediction[i][0] - result[i][0], 2);
+	den += Math.pow(testPrediction[i][0] - ybar, 2);
+}
+let r2 = 1 - num / den;
+
+console.log('r²:', r2);
 
 /* Fonctions pour le serveur */
 

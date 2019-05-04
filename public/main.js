@@ -289,7 +289,6 @@ onload = () => {
 	});*/
 
 
-	var elems = document.querySelectorAll('select');
-	var instances = M.FormSelect.init(elems);
+	M.FormSelect.init(document.querySelectorAll('select'));
 };
 
