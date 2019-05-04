@@ -20,14 +20,14 @@
 			La structure de données utilisée est du JSON sous la forme suivante:
 			<pre class="codeSample">	"fr": {
 		"https://www.spotontrack.com/track/la-marcheuse/42943174": {
-			title: "La marcheuse",
-			artists: "Christine and the Queens",
-			BPM: 107,
+			"title": "La marcheuse",
+			"artists": "Christine and the Queens",
+			"BPM": 107,
 			<span class="comment">…</span>
-			positions: [{
-				date: 2018-09-26T00:00:00.000Z, position: 2
+			"positions": [{
+				"date": 2018-09-26T00:00:00.000Z, "position": 2
 			}, {
-				date: 2018-10-03T00:00:00.000Z, position: 3
+				"date": 2018-10-03T00:00:00.000Z, "position": 3
 			}, <span class="comment">…</span>]
 		},
 		"https://www.spotontrack.com/track/mojo/43473376": {
@@ -48,16 +48,11 @@
 		<span class="comment">…</span>
 	}</pre>
 		Cette structure nous permet de séparer les différentes playlists, ainsi l'appel à `data.fr` renvoie toutes les chansons de la playlist fr.
-		<select>
-			<optgroup label="1">
-				<option value="a">a</option>
-				<option value="b">b</option>
-			</optgroup>
-			<optgroup label="2">
-					<option value="c">c</option>
-					<option value="d">d</option>
-				</optgroup>
-		</select>
+		
+
+
+		<h4>Traitement des caractères accentués</h4>
+		Une simple expression régulière règle ce problème. <pre>/\\u[0-9a-f]{4}/g</pre> détecte les codes des caractères accentués et il est en suite facile de les convertir.
 		</div>
 		
 
