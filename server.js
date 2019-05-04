@@ -597,7 +597,7 @@ let closest = kClosestMusicsWithNormalisedData(normalized, 5);
 let meanMusicsPerPlaylist = getMeanMusics(data2);
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
-console.log(closest);
+// console.log(closest);
 
 //
 

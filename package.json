@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"description": "Projet de Data Mining (M1S2)",
 	"scripts": {
-		"start": "node main.js"
+		"start": "node server.js"
 	},
 	"dependencies": {
 		"eslint": "^5.15.3",
