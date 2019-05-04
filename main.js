@@ -664,6 +664,12 @@ let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my
 
 app.use(express.static('public'));
 
+app.get('/data.json', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	res.end(JSON.stringify(data));
+});
+
+
 // 2_1_1
 app.get('/getPositionsPic', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
@@ -723,8 +729,11 @@ app.get('/getBestMeanPositionSong', (req, res) => {
 // 2_2_4
 app.get('/getSongEvolution', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	// let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
-	res.end(JSON.stringify(songEvolution));
+
+	let chosenSong = req.header('song');
+	let chosenPlaylist = req.header('playlist');
+	let chosenSongEvolution = getSongEvolution(data, chosenSong, chosenPlaylist);
+	res.end(JSON.stringify(chosenSongEvolution));
 });
 
 /* Function for the notebook */
@@ -732,9 +741,7 @@ app.get('/contentFile', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
 
 	let fileName = req.header('fileName');
-	console.log(fileName);
 	let fileContent = fs.readFileSync(fileName).toString();
-	console.log('Ce que j\'envoie : \n' + JSON.stringify(fileContent));
 	res.end(JSON.stringify(fileContent));
 });
 

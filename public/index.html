@@ -18,7 +18,8 @@
 			<p>Pour faciliter l'accès aux données, les 2 fichiers `playlists` et `tracks` sont fusionnés dans une seule structure de données.
 			Ceci est plus pratique pour accéder aux propriétés des musiques depuis la playlist.</p>
 			La structure de données utilisée est du JSON sous la forme suivante:
-			<pre class="codeSample">	"fr": {
+			<pre class="codeSample">
+	"fr": {
 		"https://www.spotontrack.com/track/la-marcheuse/42943174": {
 			title: "La marcheuse",
 			artists: "Christine and the Queens",
@@ -46,7 +47,8 @@
 	},
 	"metal": {
 		<span class="comment">…</span>
-	}</pre>
+	}
+		</pre>
 		Cette structure nous permet de séparer les différentes playlists, ainsi l'appel à `data.fr` renvoie toutes les chansons de la playlist fr.
 		<select>
 			<optgroup label="1">
@@ -175,10 +177,25 @@
 		<p>Mettre le rapport ici</p>
 		<div class="question">
 			<a id="question2_2_4" class="waves-effect btn buttons">Evolution de la position moyenne d'une chanson</a>
-			
+			<select id="question2_2_4_select">
+				<optgroup label="fr">
+					<option value="https://www.spotontrack.com/track/assassine-de-la-nuit/36729603">Assssine de la nuit (https://www.spotontrack.com/track/assassine-de-la-nuit/36729603)</option>
+				</optgroup>
+				<optgroup label="jazz">
+					<option value="https://www.spotontrack.com/track/i-got-it-bad-and-that-ain-t-good/361744">I Got It Bad And That Anin't Good (https://www.spotontrack.com/track/i-got-it-bad-and-that-ain-t-good/361744)</option>
+				</optgroup>
+				<optgroup label="lovepop">
+					<option value="https://www.spotontrack.com/track/wasn-t-expecting-that/2230">Wasn't Expecting That (https://www.spotontrack.com/track/wasn-t-expecting-that/2230)</option>
+				</optgroup>
+				<optgroup label="electro">
+					<option value="https://www.spotontrack.com/track/ohm/40765440">Ohm (https://www.spotontrack.com/track/ohm/40765440)</option>
+				</optgroup>
+				<optgroup label="metal">
+					<option value="https://www.spotontrack.com/track/twilight-of-the-thunder-god/1117533" selected>Twilight Of The Thunder God (https://www.spotontrack.com/track/twilight-of-the-thunder-god/1117533)</option>
+				</optgroup>
+			</select>
 		</div>
 		<div id="resultQuestion2_2_4" class="center-align chart"></div>
-		
 
 
 		<script type="text/javascript" src="js/materialize.min.js"></script>
