@@ -1,9 +1,11 @@
+/**
+ * @typedef {Object.<string, Object.<string, {BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number, positions: {date: Date, position: number}[]}>>} Data
+ */
+
 const fs = require('fs'),
 	PCA = require('ml-pca'),
 	{ DecisionTreeClassifier } = require('ml-cart'),
-	{ RandomForestClassifier } = require('ml-random-forest'),
 	express = require('express'),
-	// sklearn = require('jskit-learn'),
 	app = express(),
 	port = 8080;
 
@@ -30,7 +32,11 @@ function removeQuotes(data) { // Gère les guillemets
 				/*if(ch === 'u') {
 					unicode = 0;
 				} else {*/
-				clean += ch;
+				if(ch === 'u') {
+					clean += '\\u';
+				} else {
+					clean += ch;
+				}
 				escaped = false;
 				//}
 			} else if(ch === '\\') {
@@ -61,49 +67,9 @@ function remove13(buffer) { // Enlève les retours chariot
 }
 
 /**
- * Position-pic, 2.1, 1er tiret
- * @param {*} playlists 
+ * @param {Data} data 
  */
-function getPositions(playlists) {
-	/**
-	 * Key 1: nom de la playlist
-	 * Key 2: url de la chanson
-	 * Value 2: tableau des positions de la chanson dans la playlist
-	 * @type {Map<string, Map<string, number[]>>}
-	 */
-	let positions = new Map();
-	for(let i = 0; i < playlists.length; i++) {
-		let myMap;
-		let type = playlists.playlist[i],
-			position = playlists.position[i],
-			url = playlists.url[i];
-
-		if(positions.has(type)) {
-			myMap = positions.get(type);
-		} else {
-			myMap = new Map();
-			positions.set(type, myMap);
-		}
-
-		if(myMap.has(url)) {
-			let pos = myMap.get(url);
-			pos.push(position);
-			myMap.set(url, pos);
-		} else {
-			myMap.set(url, [position]);
-		}
-	}
-
-	// console.log(positions.get('fr'));
-
-	return positions;
-}
-
-/**
- * @param {*} data 
- */
-function getPositions2(data) {
-	// Object.values(data).map(playlist => Object.values(playlist).map(song => song.positions.map(pos => pos.position)));
+function getPositions(data) {
 	/**
 	 * Key 1: nom de la playlist
 	 * Key 2: url de la chanson
@@ -111,11 +77,12 @@ function getPositions2(data) {
 	 * @type {Map<string, Map<string, number[]>>}
 	 */
 	let positions = {};
+
 	for(let [playlist, songs] of Object.entries(data)) {
 		let _map = {};
-		positions[playlist] = _map;
 		for(let [url, infos] of Object.entries(songs))
 			_map[url] = infos.positions.map(pos => pos.position);
+		positions[playlist] = _map;
 	}
 
 	return positions;
@@ -123,25 +90,40 @@ function getPositions2(data) {
 
 /**
  * 2.1 - 1er tiret
- * @param {*} data 
+ * @param {Data} data 
  */
 function getPositionsPic(data) {
-
 	let positionsPic = {};
+
 	for(let [playlist, songs] of Object.entries(data)) { // Pour chaque playlist
 		let positionsPicByPlaylist = {};
 		for(let [song_url, song_data] of Object.entries(songs)) { // Pour chaque musique
 			let bestPosition = Number.MAX_SAFE_INTEGER; // On initialise la position pic à un très grand nombre
-			for(let positions of Object.values(song_data.positions)) { // Pour toute les positions
-				if(positions.position < bestPosition) { // Si on trouve une meilleure position, on modifie
+			for(let positions of Object.values(song_data.positions)) // Pour toutes les positions
+				if(positions.position < bestPosition) // Si on trouve une meilleure position, on modifie
 					bestPosition = positions.position; 
-				}
-			}
 			positionsPicByPlaylist[song_url] = bestPosition;
 		}
 		positionsPic[playlist] = positionsPicByPlaylist;
 	}
+
 	return positionsPic;
+}
+
+/**
+ * 2.1 - 1er tiret
+ * @param {Data} data 
+ */
+function addPositionPic(data) {
+	for(let [playlist, songs] of Object.entries(data)) { // Pour chaque playlist
+		for(let [song_url, song_data] of Object.entries(songs)) { // Pour chaque musique
+			let bestPosition = Number.MAX_SAFE_INTEGER; // On initialise la position pic à un très grand nombre
+			for(let positions of Object.values(song_data.positions)) // Pour toutes les positions
+				if(positions.position < bestPosition) // Si on trouve une meilleure position, on modifie
+					bestPosition = positions.position;
+			data[playlist][song_url].positionPic = bestPosition;
+		}
+	}
 }
 
 /**
@@ -159,31 +141,33 @@ function getIsTop15(positionsPic) {
 	}
 
 	return isTop15;
-	
+}
 
-	
-	
-	/**
-	 * Key 1: nom de la playlist
-	 * Key 2: nom de la chanson
-	 * Value 2: la chanson a-t-elle une position-pic < 15 ?
-	 * @type {Map<string, Map<string, boolean>>}
-	 */
-	// let isTop15 = {};
-	// for(let [playlist_name, song] of Object.entries(positions)) {
-	// 	let _map;
-	// 	if(isTop15.hasOwnProperty(playlist_name)) {
-	// 		_map = isTop15[playlist_name];
-	// 	} else {
-	// 		_map = {};
-	// 		isTop15[playlist_name] = _map;
-	// 	}
-		
-	// 	for(let [url, pos_array] of Object.entries(song))
-	// 		_map[url] = Math.min(...pos_array) < 15; // La position-pic est-elle inférieure à 15 ?
-	// }
+/**
+ * 
+ * @param {Data} data 
+ */
+function addVariables(data) {
+	for(let [playlist, songs] of Object.entries(data)) { // Pour chaque playlist
+		for(let [song_url, song_data] of Object.entries(songs)) { // Pour chaque musique
+			let bestPosition = Number.MAX_SAFE_INTEGER; // On initialise la position pic à un très grand nombre
 
-	// return isTop15;
+			data[playlist][song_url].playlistDuration = 0; // Durée de la chanson dans la playlist
+			data[playlist][song_url].playlistMeanPos = 0; // Position moyenne de la chanson dans la playlist
+
+			for(let positions of Object.values(song_data.positions)) { // Pour toutes les positions
+				if(positions.position < bestPosition) // Si on trouve une meilleure position, on modifie
+					bestPosition = positions.position;
+				
+				data[playlist][song_url].playlistDuration++;
+				data[playlist][song_url].playlistMeanPos += positions.position;
+			}
+			data[playlist][song_url].positionPic = bestPosition; // Meilleure position de la chanson dans la playlist
+			data[playlist][song_url].posPicInf15 = bestPosition < 15; // La chanson a-t'elle une position pic < 15 ?
+			data[playlist][song_url].playlistMeanPos /= Object.keys(song_data.positions).length;
+			data[playlist][song_url].playlistMeanPosInf15 = data[playlist][song_url].playlistMeanPos < 15; // La position moyenne de la chanson est-elle < 15 ?
+		}
+	}
 }
 
 /**
@@ -192,7 +176,7 @@ function getIsTop15(positionsPic) {
  * Data est un object js pouvant être envisagé comme une Map avec pour clé une string (le nom de la playlist), et comme valeur une map
  * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
  * ses positions...
- * @param {Object} data
+ * @param {Data} data
  */
 function getTimeAppeared(data) {
 
@@ -216,9 +200,9 @@ function getTimeAppeared(data) {
  * Data est un object js pouvant être envisagé comme une Map avec pour clé une string (le nom de la playlist), et comme valeur une map
  * avec comme clé une sting (l'url de la chanson) et comme value un object avec divers attributs comme le titre, le Liveness, la liste
  * ses positions...
- * @param {Object} data
+ * @param {Object} positions
  */
-function getMeanPositions(data, positions) {
+function getMeanPositions(positions) {
 	let meanPositions = {};
 	for(let [playlist_name, song] of Object.entries(positions)) {
 		let myMap;
@@ -245,7 +229,7 @@ function getMeanPositions(data, positions) {
  * le nom de la playlist et comme value une map avec comme key l'url de la
  * chanson et comme valeur la position moyenne. C'est ce qui nous est renvoyé
  * par la fonction getMeanPosition
- * @param {Object} data
+ * @param {Data} data
  * Prend positions en paramètres
  */
 function getMeanPosInf15(meanPos) {
@@ -262,6 +246,10 @@ function getMeanPosInf15(meanPos) {
 	return meanPosInf15;
 }
 
+/**
+ * 
+ * @param {Data} data 
+ */
 function addColumns(data) {
 	let d2 = {};
 	for(let [playlist, songs] of Object.entries(data)) {
@@ -282,6 +270,11 @@ function addColumns(data) {
 	return d2;
 }
 
+/**
+ * 
+ * @param {Data} data 
+ * @param {*} stats 
+ */
 function normalize(data, stats) {
 	let d2 = {};
 	for(let [playlist, songs] of Object.entries(data)) {
@@ -299,7 +292,12 @@ function normalize(data, stats) {
 	return d2;
 }
 
+/**
+ * 
+ * @param {Data} data 
+ */
 function getStats(data) { // Obtenir la moyenne, la variance et l'écart-type
+
 	let stats = {};
 	for(let [playlist, songs] of Object.entries(data)) {
 		stats[playlist] = {};
@@ -345,7 +343,7 @@ function getStats(data) { // Obtenir la moyenne, la variance et l'écart-type
 
 /**
  * 
- * @param {*} data
+ * @param {Data} data
  */
 function getMeanMusics(data) {
 	let music = {};
@@ -384,17 +382,23 @@ function euclidianDistance(m1, m2) {
 	return Math.sqrt(sum);
 }
 
+/**
+ * 
+ * @returns {number}
+ */
 function euclidianDistanceNormalized(m) {
 	let sum = 0;
+
 	for(let i of ['BPM', 'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'])
 		sum += m[i] * m[i];
+
 	return Math.sqrt(sum);
 }
 
 /**
  * 
  * @param {*} mean Chanson moyenne (non normalisée)
- * @param {*} data Données normalisées
+ * @param {Data} data Données normalisées
  */
 function closestMusics(mean, data, stats, k) {
 	// Normaliser
@@ -417,8 +421,8 @@ function closestMusics(mean, data, stats, k) {
 		})).sort((e1, e2) => e1.distance - e2.distance);
 	}
 	
-	return Object.entries(sortedData).map(([playlist ,songs]) => ({[playlist]: songs.slice(0, k)})).reduce((x, t) => {
-		Object.entries(x).forEach(([a, b])=>t[a]=b);
+	return Object.entries(sortedData).map(([playlist, songs]) => ({[playlist]: songs.slice(0, k)})).reduce((x, t) => {
+		Object.entries(x).forEach(([a, b]) => t[a] = b);
 		return t;
 	}, {});
 }
@@ -463,102 +467,20 @@ function getSongEvolution(data, song, playlist_name) {
 	return Object.values(data[playlist_name][song].positions); // Nous retournons la liste des positions associées à la playlist et à la musique demandée
 }
 
-
+/**
+ * @returns {}
+ */
 function parseData() {
 	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
 	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
 	raw_playlists.pop(); // La dernière ligne est vide, il faut la supprimer
 	raw_tracks.pop();
 
-	/** @type {{position: number[], title: string[], artists: string[], url: string[], date: Date[], playlist: string[]}} */
-	let playlists = {};
-	/** @type {string[]} */
-	let playlist_headers = raw_playlists[0].split('\t'); // On supprime les guillemets des headers
-	//** @type {{url: string, BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}} */
-	let tracks = {};
-	/** @type {string[]} */
-	let tracks_headers = raw_tracks[0].split('\t');
-
-	for(let header of playlist_headers)
-		playlists[header] = [];
-	playlists.length = raw_playlists.length - 1;
-	
-	for(let header of tracks_headers)
-		tracks[header] = [];
-	tracks.length = raw_tracks.length - 1;
-	
-	for(let i = 1; i < raw_playlists.length; i++) {
-		let line = raw_playlists[i].split('\t');
-		for(let j = 0; j < line.length; j++) {
-			let value;
-			switch(playlist_headers[j]) {
-			case 'position':
-				value = parseInt(line[j]); // On convertit en int
-				break;
-			case 'date':
-				value = new Date(line[j]); // On convertit en date
-				break;
-			default:
-				value = line[j]; // On ne convertit pas
-			}
-			playlists[playlist_headers[j]].push(value);
-		}
-	}
-
-	for(let i = 1; i < raw_tracks.length; i++) {
-		let line = raw_tracks[i].split('\t');
-		/** @type {{BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}} */
-		let value = {};
-		for(let j = 0; j < line.length; j++) {
-			let column;
-			switch(tracks_headers[j]) {
-			case 'BPM':
-				column = parseInt(line[j]);
-				break;
-			case 'Mode':
-				if(line[j] === 'Major')
-					column = true;
-				else if(line[j] === 'Minor')
-					column = false;
-				else
-					column = null;
-				break;
-			case 'Danceability':
-			case 'Valence':
-			case 'Energy':
-			case 'Acousticness':
-			case 'Instrumentalness':
-			case 'Liveness':
-			case 'Speechiness':
-				column = parseInt(line[j]) / 100;
-				break;
-			default:
-				column = line[j];
-			}
-			value[tracks_headers[j]] = column;
-			// tracks[tracks_headers[j]].push(value);
-		}
-		tracks[line[0]] = value;
-	}
-
-	fs.writeFile('playlists_unicode', JSON.stringify(playlists), err => {
-		if(err)
-			throw err;
-	});
-
-	return { playlists, playlist_headers, tracks, tracks_headers };
-}
-
-
-function parseData2() {
-	const raw_playlists = removeQuotes(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
-	const raw_tracks = removeQuotes(fs.readFileSync('data/tracks.data').toString()).split('\n');
-	raw_playlists.pop(); // La dernière ligne est vide, il faut la supprimer
-	raw_tracks.pop();
-
+	/** @type {Object.<string, Object.<string, {BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number, positions: {date: Date, position: number}[]}>>} */
 	let data = {};
 	/** @type {string[]} */
-	let playlist_headers = raw_playlists[0].split('\t'); // On supprime les guillemets des headers
+	let playlist_headers = raw_playlists[0].split('\t');
+	/** @type {Object.<string, {BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}>} */
 	let tracks = {};
 	/** @type {string[]} */
 	let tracks_headers = raw_tracks[0].split('\t');
@@ -571,10 +493,10 @@ function parseData2() {
 		for(let j = 0; j < line.length; j++) {
 			let column;
 			switch(tracks_headers[j]) {
-			case 'BPM':
+			case 'BPM': // on garde le BPM tel quel: un entier
 				column = parseInt(line[j]);
 				break;
-			case 'Mode':
+			case 'Mode': // On met le mode en binaire: 1 pour major et 0 pour minor
 				if(line[j] === 'Major')
 					column = 1;
 				else if(line[j] === 'Minor')
@@ -582,7 +504,7 @@ function parseData2() {
 				else
 					column = null;
 				break;
-			case 'Danceability':
+			case 'Danceability': // Toutes ces variables sont converties en pourcentages
 			case 'Valence':
 			case 'Energy':
 			case 'Acousticness':
@@ -591,8 +513,12 @@ function parseData2() {
 			case 'Speechiness':
 				column = parseInt(line[j]) / 100;
 				break;
-			default:
-				column = line[j];
+			default: // De base on laisse la variable sous forme de texte (la key par exemple)
+				// console.log(line[j]);
+				column = line[j].replace(/\\u[0-9a-f]{4}/g, match => {
+					console.log(match, match.substring(2), parseInt(match.substring(2), 16), String.fromCharCode(parseInt(match.substring(2), 16)));
+					return String.fromCharCode(parseInt(match.substring(2), 16));
+				});
 			}
 			if(tracks_headers[j] !== 'url')
 				value[tracks_headers[j]] = column;
@@ -605,7 +531,10 @@ function parseData2() {
 		let line = raw_playlists[i].split('\t');
 
 		let o = { // Déstructuration des objets
-			...{ title: line[1], artists: line[2] },
+			...{
+				title: line[1].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16))), // Convertir les caractères unicodes
+				artists: line[2].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16)))
+			},
 			...tracks[line[3]]
 		};
 		if(data.hasOwnProperty(line[5])) {
@@ -653,52 +582,32 @@ function shuffle(a, b) {
 
 // let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
-let data = parseData2();
-// let positions = getPositions2(data);
-// let positionsPic = getPositionsPic(data);
-// let isTop15 = getIsTop15(positionsPic);
-// let timeAppeared = getTimeAppeared(data);
-// let meanPositions = getMeanPositions(data, positions);
-// let meanPosInf15 = getMeanPosInf15(meanPositions);
+let data = parseData();
+console.log(data.fr);
+return;
+let positions = getPositions(data);
+let positionsPic = getPositionsPic(data);
+let isTop15 = getIsTop15(positionsPic);
+let timeAppeared = getTimeAppeared(data);
+let meanPositions = getMeanPositions(data, positions);
+let meanPosInf15 = getMeanPosInf15(meanPositions);
 let data2 = addColumns(data);
-// let stats = getStats(data2);
-// let normalized = normalize(data2, stats);
-// let meanMusics = getMeanMusics(data2);
-// let closest = closestMusics(meanMusics, normalized, stats, 5);
-// console.log(closest);
+let stats = getStats(data2);
+let normalized = normalize(data2, stats);
+let meanMusics = getMeanMusics(data2);
+let closest = closestMusics(meanMusics, normalized, stats, 5);
 
-/*Object.entries(stats).forEach(([playlist, st]) => {
+Object.entries(stats).forEach(([playlist, st]) => {
 	console.log(Object.entries(st).sort(([vb1, vl1], [vb2, vl2]) => vl2.variance - vl1.variance));
-});*/
+});
 
-// let meanMusicsPerPlaylist = getMeanMusics(data2);
-// let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
-// let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
-// console.log(musicEvolution);
-
-// console.log(data2.fr);
-// console.log(fr);
-
-// let fr = Object.values(data2.fr).map(e => {
-// 	let u = [];
-// 	for(let [variable, valeur] of Object.entries(e))
-// 		if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
-// 			u.push(valeur);
-// 	return u;
-// });
-
-// let dataset = shuffle(Object.values(data2).flat().map(e => {
-// 	let u = [];
-// 	for(let [variable, valeur] of Object.entries(e))
-// 		if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
-// 			u.push(valeur);
-// 	return u;
-// }));
-
-// console.log(data2.fr);
-
+let meanMusicsPerPlaylist = getMeanMusics(data2);
+let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
+let musicEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
 
 //
+
+
 let names = Object.keys(data2);
 let moyenne = 0, total = 10;
 
@@ -716,16 +625,12 @@ for(let i = 0; i < total; i++) {
 		}
 	});
 	shuffle(dataset, predictions);
-	// console.log(dataset);
-	// console.log(predictions);
 
 	let separator = Math.floor(4 * dataset.length / 5);
 	let trainingSet = dataset.slice(0, separator);
 	let trainingPrediction = predictions.slice(0, separator);
 	let testSet = dataset.slice(separator);
 	let testPrediction = predictions.slice(separator);
-
-	// console.log(trainingSet);
 
 	let classifier = new DecisionTreeClassifier({
 		gainFunction: 'gini',
@@ -735,7 +640,6 @@ for(let i = 0; i < total; i++) {
 
 	classifier.train(trainingSet, trainingPrediction);
 	let result = classifier.predict(testSet);
-	// console.log(result.length, testSet.length);
 
 	let good = 0, bad = 0;
 
@@ -753,61 +657,10 @@ for(let i = 0; i < total; i++) {
 moyenne /= total;
 console.log(`total - good: ${(moyenne * 100).toPrecision(3)}, bad: ${((1 - moyenne) * 100).toPrecision(3)}`);
 
-// console.log(names[result[i]] + '\t' + names[testPrediction[i]]);
-
-//
-
-// var irisDataset = require('ml-dataset-iris');
-
-// var trainingSet = irisDataset.getNumbers();
-// var predictions = irisDataset
-// 	.getClasses()
-// 	.map((elem) => irisDataset.getDistinctClasses().indexOf(elem));
-
-// console.log(trainingSet);
-// console.log(predictions);
-
-// var options = {
-// 	gainFunction: 'gini',
-// 	maxDepth: 10,
-// 	minNumSamples: 3
-// };
-
-// var classifier = new DecisionTreeClassifier(options);
-// classifier.train(trainingSet, predictions);
-// var result = classifier.predict(trainingSet);
-// // console.log(result);
-
-
-// let dataset = require('ml-dataset-iris').getNumbers();
-// let pca = new PCA(dataset);
-// console.log(pca.getExplainedVariance());
-
-// console.log(fr);
-// const pca = new PCA(fr);
-// console.log(pca.getExplainedVariance());
-
-
-
-// console.log(bestMeanPositionSong);
-// console.log(isTop15);
-// console.log(data2);
 
 /* Fonctions pour le serveur */
 
-
 app.use(express.static('public'));
-
-// app.get('/data.json', (req, res) => {
-// 	res.setHeader('Content-Type', 'application/json');
-// 	res.end(JSON.stringify(data));
-// });
-
-// app.get('/getfr', (request, response) => {
-// 	response.setHeader('Content-Type', 'application/json');
-// 	response.end(JSON.stringify(data2.fr));
-// });
-
 
 // 2_1_1
 app.get('/getPositionsPic', (req, res) => {
@@ -834,14 +687,16 @@ app.get('/getTimeAppeared', (req, res) => {
 // 2_1_4
 app.get('/getMeanPositions', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let meanPositions = getMeanPositions(data);
+	let positions = getPositions(data);
+	let meanPositions = getMeanPositions(positions);
 	res.end(JSON.stringify(meanPositions));
 });
 
 // 2_1_5
 app.get('/getMeanPosInf15', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let meanPositions = getMeanPositions(data);
+	let positions = getPositions(data);
+	let meanPositions = getMeanPositions(positions);
 	let isTop15 = getMeanPosInf15(meanPositions);
 	res.end(JSON.stringify(isTop15));
 });
@@ -857,7 +712,8 @@ app.get('/getMeanMusics', (req, res) => {
 // 2_2_3
 app.get('/getBestMeanPositionSong', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	let meanPositions = getMeanPositions(data);
+	let positions = getPositions(data);
+	let meanPositions = getMeanPositions(positions);
 	let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 	res.end(JSON.stringify(bestMeanPositionSong));
 });
