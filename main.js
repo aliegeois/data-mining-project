@@ -744,9 +744,33 @@ app.get('/getBestMeanPositionSong', (req, res) => {
 	res.end(JSON.stringify(bestMeanPositionSong));
 });
 
+// 2_2_4
+app.get('/getSongEvolution', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+	res.end(JSON.stringify(songEvolution));
+});
+
+/* Function for the notebook */
+app.get('/contentFile', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+
+	let fileName = req.header('fileName');
+	console.log(fileName);
+	let fileContent = fs.readFileSync(fileName).toString();
+	console.log('Ce que j\'envoie : \n' + JSON.stringify(fileContent));
+	res.end(JSON.stringify(fileContent));
+});
+
 app.listen(port, () => {
 	console.log('Serveur online');
 });
 
 
-console.log(bestMeanPositionSong);
+
+
+
+
+
+
+console.log(data);

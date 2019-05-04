@@ -1,3 +1,33 @@
+function formateDate(d) {
+	let date = new Date(d);
+	return (date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear()); // Month +1 car les mois commecent à 
+}
+
+function addRapportText(questionNumber) {
+	fetch('/contentFile', {
+		headers: new Headers({
+			'fileName': 'rapport/' + questionNumber + '.txt'
+		})
+	})
+		.then(res => res.json())
+		.then(res => {
+			let rapport = document.getElementById(questionNumber + '_rapport');
+			rapport.innerHTML = res;
+		});
+}
+function addRapportCode(questionNumber) {
+	fetch('/contentFile', {
+		headers: new Headers({
+			'fileName': 'rapport/' + questionNumber + '_code.txt'
+		})
+	})
+		.then(res => res.json())
+		.then(res => {
+			let rapport = document.getElementById(questionNumber + '_code');
+			rapport.innerHTML = res;
+		});
+}
+
 onload = () => {
 
 	document.getElementById('question2_1_1').addEventListener('click', () => {
@@ -189,5 +219,80 @@ onload = () => {
 
 			});
 	});
+
+	// Création du select avec toute les chansons possibles
+	/*
+	document.getElementById('test').addEventListener('click', () => {
+		let question_2_2_4_select = document.getElementById('question2_2_4_select');
+		fetch('/data.json')
+			.then(res => res.json())
+			.then(res => {
+				console.log('FLAG A');
+				for(let [playlist, music] of Object.entries(res)) {
+					console.log('FLAG B');
+					let selectCategory = document.createElement('optgroup');
+					selectCategory.setAttribute('label', playlist);
+					console.log('Playlist : ' + playlist);
+					for(let [musicURL, musicCaracteristics] of Object.entries(music)) {
+						console.log('Music : ' + musicURL);
+						let selectLine = document.createElement('option');
+						selectLine.setAttribute('value', musicURL);
+						selectLine.appendChild(document.createTextNode(musicURL));
+						selectCategory.appendChild(selectLine);
+					}
+
+					question_2_2_4_select.appendChild(selectCategory);
+				}
+
+			});
+	});
+	*/
+
+
+	document.getElementById('question2_2_4').addEventListener('click', () => {
+		const result = document.getElementById('resultQuestion2_2_4');
+		result.innerHTML = '';
+		fetch('/getSongEvolution')
+			.then(res => res.json())
+			.then(res => {
+
+				res.sort((a, b) => {
+					return new Date(a.date) - new Date(b.date);
+				});
+
+				let canvas = document.createElement('canvas');
+				let ctx = canvas.getContext('2d');
+				new Chart(ctx, {
+					type: 'line',
+					data: {
+						labels: res.map(e => formateDate(e.date)),
+						datasets: [{
+							label: 'Position',
+							data: res.map(e => e.position),
+							borderColor: 'rgba(255, 99, 132)',
+							lineTension: .2
+						}]
+					}
+				});
+				
+				result.appendChild(canvas);
+			});
+	});
 	
+
+	//addRapportText('2_1_1');
+
+	document.getElementById('test2').addEventListener('click', () => {
+		fetch('/contentFile', {
+			headers: new Headers({
+				'fileName': 'rapport/2_1_1.txt'
+			})
+		})
+			.then(res => res.json())
+			.then(res => {
+				let rapport = document.getElementById('2_1_1_rapport');
+				rapport.innerHTML = res;
+			});
+	});
 };
+

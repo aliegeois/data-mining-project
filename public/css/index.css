@@ -2,20 +2,31 @@ body {
     padding-left: 10%;
     padding-right: 10%;
     padding-bottom: 30px;
+    background-color: #eeeeee;
 }
 
 h3 {
     text-align: center;
+    color: #ef6c00;
 }
 h4 {
     text-align: center;
     font-size: 22px;
+    color: #212121;
 }
 #questions {
     text-align: center;
 }
 #questions a {
     margin: 2%;
+}
+
+.buttons {
+    background-color: #ef6c00;
+    font-size: 16px;
+}
+.buttons:hover {
+    background-color: #f57c00;
 }
 
 #description, #result {
@@ -28,10 +39,49 @@ h4 {
     margin-bottom: 20px;
 }
 
+.fonctionAssociee {
+    color: #212121;
+}
+.fonctionAssociee span {
+    font-weight: bold;
+}
+
+.code {
+    border-left: 2px solid #212121;
+    padding-left: 2%;
+}
+.code h6 img {
+    height: 40px;
+    vertical-align: center;
+    vertical-align: tom;
+}
+.code h6 div {
+    vertical-align: top;
+    display: inline-block;
+    height: 40px;
+    line-height: 35px;
+    font-weight: bold;
+    font-size: 20px;
+}
+.codeSample {
+    background-color: #212121;
+    padding: 3px;
+    padding-left: 5px;
+    color: #eeeeee;
+}
+.codeSample .comment {
+    color: #f57c00;
+}
+
+
+
+
+
 .result {
     max-height: 300px;
     overflow-y: scroll;
 }
+
 .result h6 {
     font-weight: bold;
 }
@@ -48,3 +98,5 @@ h4 {
 .colorFalse {
     color: rgba(112, 14, 14, 1);
 }
+
+
