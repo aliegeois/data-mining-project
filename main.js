@@ -793,11 +793,10 @@ console.log(`total - good: ${(moyenne * 100).toPrecision(3)}, bad: ${((1 - moyen
 // console.log(isTop15);
 // console.log(data2);
 
-// let meanPosInf15 = getMeanPosInf15(meanPositions);
-// console.log(meanPosInf15);
+/* Fonctions pour le serveur */
 
 
-// app.use(express.static('public'));
+app.use(express.static('public'));
 
 // app.get('/data.json', (req, res) => {
 // 	res.setHeader('Content-Type', 'application/json');
@@ -809,6 +808,78 @@ console.log(`total - good: ${(moyenne * 100).toPrecision(3)}, bad: ${((1 - moyen
 // 	response.end(JSON.stringify(data2.fr));
 // });
 
-// app.listen(port, () => {
-// 	console.log('wesh');
-// });
+
+// 2_1_1
+app.get('/getPositionsPic', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let positionsPic = getPositionsPic(data);
+	res.end(JSON.stringify(positionsPic));
+});
+
+// 2_1_2
+app.get('/getIsTop15', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let positionsPic = getPositionsPic(data);
+	let isTop15 = getIsTop15(positionsPic);
+	res.end(JSON.stringify(isTop15));
+});
+
+// 2_1_3
+app.get('/getTimeAppeared', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let timeAppeared = getTimeAppeared(data);
+	res.end(JSON.stringify(timeAppeared));
+});
+
+// 2_1_4
+app.get('/getMeanPositions', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let meanPositions = getMeanPositions(data);
+	res.end(JSON.stringify(meanPositions));
+});
+
+// 2_1_5
+app.get('/getMeanPosInf15', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let meanPositions = getMeanPositions(data);
+	let isTop15 = getMeanPosInf15(meanPositions);
+	res.end(JSON.stringify(isTop15));
+});
+
+
+// 2_2_2
+app.get('/getMeanMusics', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let meanMusics = getMeanMusics(data2);
+	res.end(JSON.stringify(meanMusics));
+});
+
+// 2_2_3
+app.get('/getBestMeanPositionSong', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let meanPositions = getMeanPositions(data);
+	let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
+	res.end(JSON.stringify(bestMeanPositionSong));
+});
+
+// 2_2_4
+app.get('/getSongEvolution', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+	res.end(JSON.stringify(songEvolution));
+});
+
+/* Function for the notebook */
+app.get('/contentFile', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+
+	let fileName = req.header('fileName');
+	console.log(fileName);
+	let fileContent = fs.readFileSync(fileName).toString();
+	console.log('Ce que j\'envoie : \n' + JSON.stringify(fileContent));
+	res.end(JSON.stringify(fileContent));
+});
+
+app.listen(port, () => {
+	console.log('Serveur online');
+});

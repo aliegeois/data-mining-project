@@ -1,0 +1,8 @@
+Afin de calculer la position-pic de chaque chanson, il nous suffit de parcourir la structure de données évoquées via des itérateurs natifs de JavaScript :
+
+- Pour chaque playlist
+	- Pour chaque chanson de cette playlist
+		- On initialise la meilleure position à l’entier maximal
+		- Pour chaque position de cette chanson
+			- On modifie la meilleure position si la position trouvée est meilleure que la meilleure 				position-pic
+- On retourne la structure adaptée
