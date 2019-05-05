@@ -362,19 +362,33 @@
 		<h4>Arbre de décision</h4>
 		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>predictPlaylist</span> dans server.js</div>
 		<div class="rapport">
-				Pour cette partie nous avons utilisé un arbre de décision, qui donne des résultats graphiques faciles à comprendre.
-				Nous analysons l'intégralité des playlists pour tenter de les prédire.
-				Le dataset est d'abord coupé en 2 morceaux: 80% pour l'entrainement et 20% pour le test.
-				L'arbre de décision se construit à partir des données d'entrainement puis on teste son efficacité sur les données de test.
-				Avec une précision moyenne de ~65% l'arbre ne donne pas de bons résultats, néanmoins il explique clairement le modèle.
-				C'est quasiment toujours l'instrumentalness qui est choisie comme 1ère variable de découpe.
-				L'arbre est généré avec une profondeur maximale de 10 même s'il ne dépasse jamais cette limite
+			Pour cette partie nous avons utilisé un arbre de décision, qui donne des résultats graphiques faciles à comprendre.
+			Nous analysons l'intégralité des playlists pour tenter de les prédire.
+			Le dataset est d'abord coupé en 2 morceaux: 80% pour l'entrainement et 20% pour le test.
+			L'arbre de décision se construit à partir des données d'entrainement puis on teste son efficacité sur les données de test.
+			Avec une précision moyenne de ~65% l'arbre ne donne pas de bons résultats, néanmoins il explique clairement le modèle.
+			C'est quasiment toujours l'instrumentalness qui est choisie comme 1ère variable de découpe.
+			L'arbre est généré avec une profondeur maximale de 10 même s'il ne dépasse jamais cette limite
 		</div>
 		<div class="question">
 			<a id="question2_4_1" class="waves-effect btn buttons">Arbre de décision</a>
 		</div>
 		<div id="resultQuestion2_4_1" class="center-align result"></div>
 		<div id="question2_4_1tree"></div>
+
+		<!-- 2.4.2 -->
+		<h4>Régression linéaire</h4>
+		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>linearRegression</span> dans server.js</div>
+		<div class="rapport">
+			Pour prédire la postion d'une playlist nous avons utilisé un régresseur linéaire. Nous tentons de prédire la durée pendant laquelle une chanson va rester dans la playlist.
+			Le régresseur calcule un poids à affecter à chaque variable et effectue une somme pondérée avec les variables descriptives pour prédire la position.
+			Nous utilisons la mesure R2 pour avoir une idée de la performance du modèle.
+			R2 varie beaucoup selon le jeu de test utilisé, mais puisqu'il est tiré au hasard nous ne savons pas exactement sous quelles conditions la mesure évolue.
+			En moyenne, R2 vaut 0.21, une valeur très mauvaise pour la prédiction.
+			Ceci indique qu'il semble vain de tenter de prédire la position d'une chanson en fonction de ses caractéristiques.
+			Les variables récoltées sont probablement insuffisantes pour ce genre de prédiction.
+			Outre cela, si la popularité d'une musique dépendait de paramètres aussi simples, les maisons d'éditions l'aurait compris depuis longtemps.
+		</div>
 
 		<script type="text/javascript" src="js/materialize.min.js"></script>
 		<script type="text/javascript" src="js/chart.min.js"></script>

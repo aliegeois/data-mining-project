@@ -610,7 +610,7 @@ function predictPlaylist() { // Decision Tree Classifier
 }
 // console.log(predictPlaylist().tree);
 
-function crossVal() { // Validation croisée par arbre de décision 
+function crossVal() { // Validation croisée par arbre de décision
 	let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
 
 	let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
@@ -630,6 +630,7 @@ function linearRegression() { // Effectue une régression linéaire sur la duré
 	let regressor = new MLR(trainingSet, trainingPrediction);
 	// Prédiction sur le jeu de test
 	let result = regressor.predict(testSet);
+	// console.log(regressor.weights);
 
 	// Moyenne en y
 	let ybar = 0;
@@ -645,7 +646,7 @@ function linearRegression() { // Effectue une régression linéaire sur la duré
 	}
 	let r2 = 1 - num / den;
 
-	return r2;
+	return { weights: regressor.weights, r2 };
 }
 
 //
@@ -673,7 +674,8 @@ let bestMeanPositionSong = getBestMeanPositionSong(meanPositions); // Récupère
 let names = Object.keys(dataExtended);
 
 
-acp();
+for(let i = 0; i < 10; i++)
+	console.log(linearRegression().r2);
 
 /* Fonctions pour le serveur */
 
