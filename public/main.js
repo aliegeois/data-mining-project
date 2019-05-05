@@ -27,7 +27,7 @@ function treeAddChildren(elem, headers) {
 	}
 	return {
 		text : {
-			name: headers[elem.splitColumn] + '(' + elem.splitFunction + ')'
+			name: headers[elem.splitColumn] + ' (' + elem.splitValue + ')'
 			// kind : elem.kind,
 			// gainFunction : elem.gainFunction,
 			// splitFunction: elem.splitFunction,
@@ -440,7 +440,7 @@ onload = () => {
 			.then(res => {
 				result.innerHTML = '';
 				let acc = document.createElement('h6');
-				let accuracy = document.createTextNode('Accuracy : ' + res.accuracy);
+				let accuracy = document.createTextNode('Accuracy : ' + res.accuracy*100 + '%');
 				acc.appendChild(accuracy);
 				result.appendChild(acc);
 				
