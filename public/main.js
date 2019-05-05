@@ -4,12 +4,19 @@ function formateDate(d) {
 }
 
 function transformTree(rawJson, div, headers) {
-	let tree = {};
-	tree.chart = {};
-	tree.chart.container = '#' + div;
-	tree.chart.rootOrientation  = 'NORTH';
-	tree.nodeStructure = treeAddChildren(rawJson, headers);
-	return tree;
+	return {
+		chart: {
+			connectors: {
+				style: {
+					'stroke-width': 2
+				},
+				type: 'step'
+			},
+			container: `#${div}`,
+			rootOrientation: 'NORTH'
+		},
+		nodeStructure: treeAddChildren(rawJson, headers)
+	};
 }
 
 function treeAddChildren(elem, headers) {

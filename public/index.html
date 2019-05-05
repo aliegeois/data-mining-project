@@ -270,6 +270,10 @@
 			<a id="question2_2_1" class="waves-effect btn buttons">Analyse</a>
 		</div>
 		<div id="resultQuestion2_2_1" class="center-align"></div>
+		<div>
+			Lors de la comparaison des variables entre elles en remarque qu'il existe très peu de correlation entre elles, si ce n'est pour le BPM où des semblants de lignes se forment.
+			Ceci indique que les variables sont très peu liées entre elles.
+		</div>
 
 		<!-- 2.2.2 -->
 		<h4>Profil de la chanson moyenne pour chaque playlist</h4>
@@ -338,7 +342,11 @@
 		<h4>Analyse en composante principale</h4>
 		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>////////////</span> dans server.js</div>
 		<div class="rapport">
-			<p>Mettre le code ici</p>
+			<p>
+				L'ACP donne des résultats très particuliers puisqu'on obtient graphiquement 2 ensembles séparés.
+				Ceci est probablement dû au Mode qui prend une valeur binaire et qui sépare distinctement toutes les musiques ayant un mode majeur de celles ayant un mode mineur.
+				Les 2 ensembles ont visiblement la même allure, ce qui laisse supposer que le mode n'a que peu d'influence sur les autres variables.
+			</p>
 		</div>
 		<div class="question">
 			<a id="question_2_3" class="waves-effect btn buttons">ACP</a>
@@ -354,7 +362,13 @@
 		<h4>Arbre de décision</h4>
 		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>predictPlaylist</span> dans server.js</div>
 		<div class="rapport">
-			Mettre le rapport ici
+				Pour cette partie nous avons utilisé un arbre de décision, qui donne des résultats graphiques faciles à comprendre.
+				Nous analysons l'intégralité des playlists pour tenter de les prédire.
+				Le dataset est d'abord coupé en 2 morceaux: 80% pour l'entrainement et 20% pour le test.
+				L'arbre de décision se construit à partir des données d'entrainement puis on teste son efficacité sur les données de test.
+				Avec une précision moyenne de ~65% l'arbre ne donne pas de bons résultats, néanmoins il explique clairement le modèle.
+				C'est quasiment toujours l'instrumentalness qui est choisie comme 1ère variable de découpe.
+				L'arbre est généré avec une profondeur maximale de 10 même s'il ne dépasse jamais cette limite
 		</div>
 		<div class="question">
 			<a id="question2_4_1" class="waves-effect btn buttons">Arbre de décision</a>

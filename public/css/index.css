@@ -105,3 +105,8 @@ h4 {
 .colorFalse {
     color: rgba(112, 14, 14, 1);
 }
+
+
+.node {
+	border: 1px solid black;
+}
