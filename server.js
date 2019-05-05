@@ -773,6 +773,12 @@ app.get('/predictPlaylist', (req, res) => {
 	res.end(JSON.stringify(predictedPlaylist));
 });
 
+// 2_4_2
+app.get('/linearRegression', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	res.end(JSON.stringify(linearRegression()));
+});
+
 /* Function for the notebook */
 app.get('/contentFile', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');

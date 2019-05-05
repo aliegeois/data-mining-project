@@ -495,6 +495,33 @@ onload = () => {
 				// }
 			});
 	});
+
+	document.getElementById('question2_4_2').addEventListener('click', () => {
+		let result = document.getElementById('resultQuestion2_4_2');
+		result.innerHTML = '';
+		fetch('/linearRegression')
+			.then(res => res.json())
+			.then(res => {
+				let variables = ['BPM', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'];
+
+				let table = document.createElement('table');
+				for(let i = 0; i < res.weights.length; i++) {
+					let tr = document.createElement('tr');
+					let td1 = document.createElement('td');
+					let td2 = document.createElement('td');
+					td1.innerHTML = variables[i];
+					td2.innerHTML = res.weights[i];
+					tr.appendChild(td1);
+					tr.appendChild(td2);
+					table.appendChild(tr);
+				}
+				result.appendChild(document.createTextNode('Exemple de coéfficients'));
+				result.appendChild(table);
+			});
+		
+
+	});
+
 	//addRapportText('2_1_1');
 
 	/*document.getElementById('test2').addEventListener('click', () => {
