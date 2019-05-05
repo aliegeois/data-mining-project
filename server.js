@@ -618,15 +618,13 @@ function splitData(data, column) {
 
 let names = Object.keys(dataExtended);
 
-let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
+function acp() {
+	let { dataset } = splitData(data, (_, name) => names.indexOf(name));
 
-let vectors = PCA.getEigenVectors(dataset);
-// console.log(dataset);
-// console.log(vectors);
-// for(let i = 0; i < vectors.length; i++)
-// 	console.log(i, PCA.computePercentageExplained(vectors, vectors[i]));
-let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData;
-// console.log(adData);
+	let vectors = PCA.getEigenVectors(dataset);
+
+	return PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData;
+}
 
 // let topTwo = PCA.computePercentageExplained(vectors, vectors[1]);
 
@@ -774,7 +772,7 @@ app.get('/getSongEvolution', (req, res) => {
 
 app.get('/adjustedData', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	res.end(JSON.stringify(adData));
+	res.end(JSON.stringify(acp()));
 });
 
 // 2_4_1
