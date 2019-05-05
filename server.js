@@ -789,6 +789,5 @@ app.get('/contentFile', (req, res) => {
 });
 
 app.listen(port, () => {
-	console.log('Serveur online');
-	console.log('Connectez vous sur http://localhost:8080/ pour pouvoir exécuter les fonctions');
+	console.log(`Connectez vous sur http://localhost:${port}/ pour pouvoir exécuter les fonctions`);
 });
