@@ -283,6 +283,9 @@
 			<p>Pour réaliser cela, nous récupérons les données renvoyées par getStats et ne considérons que les moyennes associées à la playlist de notre choix. Nous ne pouvons malheureusement pas renvoyer directement les moyennes comme cela à cause des 12 colonnes de key. En effet, celle-ci ont une moyenne entre 0 et 1 (et plus proche de 0 car uniquement 1 variables sur 12 est égal à 1 à chaque fois). Hors, une musique, même moyenne, ne peut avoir que des 0 ou des 1 pour cette variable. Nous avons donc choisi de trouver la colonne key avec la valeur moyenne la plus haute, de mettre à 1 la colonne key de la chanson moyenne de cette key, et de mettre toutes les autres à 0.</p>
 			<p>De cette manière, nous pouvons établir le profil type de la chanson moyenne.</p>
 			<img src="images/meanMusic.PNG" alt="Mean Music" class="img_rapport" />
+			<p>Pour calculer les chansons les plus proches de ces chansons types, nous calculons la distance euclidienne des musiques par rapport à la chansons moyenne. Toutefois, à ce stade, les variables n’étaient pas utilisables pour faire des statistiques avancées car elles n’étaient pas comparables : le BPM, par exemple, peut aisément monter à plus de 100 alors que les variables définies si dessous ne peuvent intrinsèquement pas dépasser 1. Il nous faut donc réaliser une normalisation sur les variables afin de pouvoir calculer des distances euclidiennes.</p>
+			<p>Méthode de normalisation : Pour chaque valeur, nous lui soustrayons la moyenne afin qu’elles soient toutes centrées autour de 0, puis nous divisons par l’écart type afin que toutes les variables soient dans un intervalle à la même échelle.</p>
+			<p>Nous avons donc dû pour cela créer des bouts de codes s’occupant de calculer la moyenne pour chaque valeur (sommes toute les valeurs et divise par la taille du tableau associé) et l’écart type (explications), puis normalisant les valeurs grâce aux statistiques trouvées.</p>
 		</div>
 		<div class="question">
 			<a id="question2_2_2" class="waves-effect btn buttons">Profil de la chanson moyenne</a>
@@ -338,19 +341,29 @@
 		<!-- 2.3 -->
 		<h3>Analyse exploratoire multidimensionnelle</h3>
 
+		A partir de ce stade, nous ne pouvions plus réaliser les opérations "à la main", tels de réalisées précédemment.
+		Nous avons donc choisi d'utiliser des bibliothèques javascript adaptées pour cela. Les bibliothèques en question sont importées dans les premières lignes
+		de <b>server.js</b> et sont <b>pca-js</b> (pour réaliser une acp), <b>ml-cart</b> (pour réaliser des arbres de décision), <b>ml-regression-multivariate-linear</b> (pour
+		la régression linéaire) et <b>ml-cross-validation</b> (pour la cross-validation)
+
 		<!-- 2.3.1 -->
 		<h4>Analyse en composante principale</h4>
 		<div class="fonctionAssociee">Fonctionnalité développée dans notre fonction <span>////////////</span> dans server.js</div>
 		<div class="rapport">
-			<p>
-				L'ACP donne des résultats très particuliers puisqu'on obtient graphiquement 2 ensembles séparés.
-				Ceci est probablement dû au Mode qui prend une valeur binaire et qui sépare distinctement toutes les musiques ayant un mode majeur de celles ayant un mode mineur.
-				Les 2 ensembles ont visiblement la même allure, ce qui laisse supposer que le mode n'a que peu d'influence sur les autres variables.
-			</p>
+			<p>On a actuellement 21 variables différentes (dont 12 uniquement pour la key). On désire désormais pouvoir projeter les  chansons décrites par toutes ces variables sur un plan. Un plan étant en deux dimensions, il nous faut donc effectuer une réduction de dimensions afin de passer de 21 variables à 2. Il convient donc de déterminer les deux dimensions à garder, ou s’il faut créer deux dimensions représentant une agrégation des autres variables.</p>
+			<p>Nous pourrions réaliser cela à la main, et ne garder, par exemple, que les deux dimensions avec la plus grande variance. Toutefois, cette modèle ne sont semble pas satisfaisante, pas trop imprécis et ne rendant pas réellement compte de l’impact que peuvent l’avoir les variables sur une chansons.</p>
+			<p>Nous avons donc décidé d'utiliser la bibliothèque <b>pca-js</b> réalisant l'ACP en créant deux dimensions adéquates pour représenter les chansons sur un plan</p>
 		</div>
 		<div class="question">
 			<a id="question_2_3" class="waves-effect btn buttons">ACP</a>
 			<canvas id="c_2_3"></canvas>
+		</div>
+		<div class="rapport">
+			<p>
+				L'ACP donne des résultats très particuliers puisqu'on obtient graphiquement 2 ensembles séparés.
+				Ceci est probablement dû au Mode qui prend une valeur binaire et qui sépare distinctement toutes les musiques ayant un mode majeur de celles ayant un mode mineur.
+				Les 2 ensembles ont visiblement la même allure, ce qui laisse supposer que le mode n'a que peu d'influence sur les autres variables : chaque cluster représente simplement un des deux modes. 
+			</p>
 		</div>
 
 
