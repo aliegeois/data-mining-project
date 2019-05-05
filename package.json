@@ -10,6 +10,7 @@
 		"express": "^4.16.4",
 		"ml": "^3.5.0",
 		"ml-dataset-iris": "^1.0.0",
+		"opn": "^6.0.0",
 		"pca-js": "^1.0.2"
 	},
 	"repository": {

@@ -5,6 +5,7 @@
  */
 
 const fs = require('fs'), // File System library
+	opn = require('opn'),
 	PCA = require('pca-js'),
 	{ DecisionTreeClassifier } = require('ml-cart'),
 	MLR = require('ml-regression-multivariate-linear'),
@@ -790,4 +791,5 @@ app.get('/contentFile', (req, res) => {
 
 app.listen(port, () => {
 	console.log(`Connectez vous sur http://localhost:${port}/ pour pouvoir exécuter les fonctions`);
+	opn(`http://localhost:${port}`);
 });
