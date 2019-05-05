@@ -584,27 +584,7 @@ function acp() {
 
 	let vectors = PCA.getEigenVectors(dataset);
 
-	let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData;
-	// console.log(adData);
-	let outliers = [];
-
-	let flat = [];
-	for(let [playlist_name, songs] of Object.entries(data)) {
-		for(let [song_url, infos] of Object.entries(songs)) {
-			flat.push({
-				playlist: playlist_name,
-				url: song_url,
-				...infos
-			});
-		}
-	}
-
-	for(let i = 0; i < dataset.length; i++) {
-		if(dataset[i][0] == 47)
-			console.log(i, flat[i]);
-	}
-
-	return adData;
+	return PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData; // On récupère les 2 variables ayant le plus d'influence
 }
 
 // let topTwo = PCA.computePercentageExplained(vectors, vectors[1]);
@@ -687,7 +667,7 @@ let closest = kClosestMusicsWithNormalisedData(normalized, 5); // Renvoie les k 
 
 let meanMusicsPerPlaylist = getMeanMusics(dataExtended); // Calule la musique moyenne pour chaque playlist
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions); // Récupère la musique la plus proche de la moyenne pour chaque playlist
-let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
+// let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
 
 
 let names = Object.keys(dataExtended);
