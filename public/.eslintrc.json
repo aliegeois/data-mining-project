@@ -32,6 +32,7 @@
 	},
 	"globals": {
 		"Chart": false,
-		"M": false
+		"M": false,
+		"Treant": false
 	}
 }
