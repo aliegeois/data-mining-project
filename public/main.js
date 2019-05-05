@@ -152,6 +152,30 @@ onload = () => {
 			});
 	});
 
+	document.getElementById('question2_2_1').addEventListener('click', () => {
+		const result = document.getElementById('resultQuestion2_2_2');
+		result.innerHTML = '';
+		fetch('/getMeanMusics')
+			.then(res => res.json())
+			.then(res => {
+				for(let [playlist, musicCaracteristics] of Object.entries(res)) {
+					let elemPlaylist = document.createElement('div');
+					let elemTitlePlaylist = document.createElement('h6');
+					let titlePlaylist = document.createTextNode('Profil de la chanson ' + playlist + ' moyenne');
+					elemTitlePlaylist.appendChild(titlePlaylist);
+					elemPlaylist.appendChild(elemTitlePlaylist);
+
+					for(let [key, value] of Object.entries(musicCaracteristics)) {
+						let elemLine = document.createElement('p');
+						elemLine.innerHTML = key + ' : ' + value;
+						elemPlaylist.appendChild(elemLine);
+					}
+
+					result.appendChild(elemPlaylist);
+				}
+			});
+	});
+
 	document.getElementById('question2_2_2').addEventListener('click', () => {
 		const result = document.getElementById('resultQuestion2_2_2');
 		result.innerHTML = '';

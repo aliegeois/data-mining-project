@@ -7,6 +7,7 @@
 const fs = require('fs'),
 	MLPCA = require('ml-pca'),
 	PCA = require('pca-js'),
+	Performance = require('ml-performance'),
 	{ DecisionTreeClassifier, DecisionTreeRegression } = require('ml-cart'),
 	{ RandomForestRegression } = require('ml-random-forest'),
 	MLR = require('ml-regression-multivariate-linear'),
@@ -616,28 +617,6 @@ function splitData(data, column) {
 
 let names = Object.keys(dataExtended);
 
-// let dataset = [];
-// let predictions = [];
-// Object.entries(data2).forEach(([name, playlist]) => {
-// 	for(let d of Object.values(playlist)) {
-// 		let u = [];
-// 		for(let [variable, valeur] of Object.entries(d))
-// 			if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
-// 				u.push(valeur);
-// 		dataset.push(u);
-// 		// predictions.push(names.indexOf(name));
-// 		predictions.push([d.playlistDuration]);
-// 	}
-// });
-// shuffle(dataset, predictions);
-
-// let separator = Math.floor(4 * dataset.length / 5);
-// let trainingSet = dataset.slice(0, separator);
-// let trainingPrediction = predictions.slice(0, separator);
-// let testSet = dataset.slice(separator);
-// let testPrediction = predictions.slice(separator);
-
-let { trainingSet, trainingPrediction, testSet, testPrediction } = splitData(data, d => [d.playlistDuration]);
 let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
 
 let vectors = PCA.getEigenVectors(dataset);
@@ -649,56 +628,62 @@ let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).formattedA
 
 // let topTwo = PCA.computePercentageExplained(vectors, vectors[1]);
 
+// 2.4.1
 function predictPlaylist() { // Decision Tree Classifier
-	let { trainingSet, trainingPrediction, testSet, testPrediction} = splitData(data, (_, name) => names.indexOf(name));
+	let { trainingSet, trainingPrediction, testSet, testPrediction } = splitData(data, (_, name) => names.indexOf(name));
 	// console.log(trainingSet, trainingPrediction);
 	// console.log(testPrediction);
 	let classifier = new DecisionTreeClassifier();
 	classifier.train(trainingSet, trainingPrediction);
-	let res1 = classifier.predict(testSet);
+	let result = classifier.predict(testSet);
 	// console.log(res1);
 	let g = 0;
-	for(let i = 0; i < res1.length; i++) {
+	for(let i = 0; i < result.length; i++) {
 		// console.log(res1[i], testPrediction[i]);
-		if(res1[i] === testPrediction[i])
+		if(result[i] === testPrediction[i])
 			g++;
 	}
 
 	return {
+		headers: ['BPM', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'],
 		tree: classifier.root,
 		accuracy: g / testPrediction.length
 	};
 }
+console.log(predictPlaylist().headers);
 
-let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
-for(let i = 0; i < names.length; i++)
-	console.log(names[i], confusionMarix.getConfusionTable(i));
-console.log('accuracy:', confusionMarix.getAccuracy());
-console.log(confusionMarix);
+// let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
+// for(let i = 0; i < names.length; i++)
+// 	console.log(names[i], confusionMarix.getConfusionTable(i));
+// console.log('accuracy:', confusionMarix.getAccuracy());
+// console.log(confusionMarix);
 
-let ybar = 0;
-for(let [i] of testPrediction)
-	ybar += i;
-ybar /= testPrediction.length;
+// 2.4.2
+function linearRegression() { // Effectue une régression linéaire sur la durée de la chanson dans la playlist
+	let { trainingSet, trainingPrediction, testSet, testPrediction } = splitData(data, d => [d.playlistDuration]);
 
+	let regressor = new MLR(trainingSet, trainingPrediction);
+	let result = regressor.predict(testSet);
 
+	let ybar = 0;
+	for(let [i] of testPrediction)
+		ybar += i;
+	ybar /= testPrediction.length;
 
-let regressor = new MLR(trainingSet, trainingPrediction);
+	// console.log('score', regressor.score());
 
+	let num = 0, den = 0;
+	for(let i = 0; i < result.length; i++) {
+		// console.log(testPrediction[i][0], result[i][0]);
+		num += Math.pow(testPrediction[i][0] - result[i][0], 2);
+		den += Math.pow(testPrediction[i][0] - ybar, 2);
+	}
+	let r2 = 1 - num / den;
 
-
-let result = regressor.predict(testSet);
-// console.log('score', regressor.score());
-
-let num = 0, den = 0;
-for(let i = 0; i < result.length; i++) {
-	// console.log(testPrediction[i][0], result[i][0]);
-	num += Math.pow(testPrediction[i][0] - result[i][0], 2);
-	den += Math.pow(testPrediction[i][0] - ybar, 2);
+	return { r2 };
 }
-let r2 = 1 - num / den;
+// linearRegression();
 
-console.log('r²:', r2);
 
 /* Fonctions pour le serveur */
 
