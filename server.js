@@ -647,57 +647,58 @@ let vectors = PCA.getEigenVectors(dataset);
 let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).formattedAdjustedData;
 // console.log(adData);
 
-// let topTwo = PCA.computePercentageExplained(vectors, /*vectors[0], */vectors[1]);
-// console.log(topTwo);
+// let topTwo = PCA.computePercentageExplained(vectors, vectors[1]);
+
+function predictPlaylist() { // Decision Tree Classifier
+	let { trainingSet, trainingPrediction, testSet, testPrediction} = splitData(data, (_, name) => names.indexOf(name));
+	// console.log(trainingSet, trainingPrediction);
+	// console.log(testPrediction);
+	let classifier = new DecisionTreeClassifier();
+	classifier.train(trainingSet, trainingPrediction);
+	let res1 = classifier.predict(testSet);
+	// console.log(res1);
+	let g = 0;
+	for(let i = 0; i < res1.length; i++) {
+		// console.log(res1[i], testPrediction[i]);
+		if(res1[i] === testPrediction[i])
+			g++;
+	}
+
+	return {
+		tree: classifier.root,
+		accuracy: g / testPrediction.length
+	};
+}
+
+let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
+for(let i = 0; i < names.length; i++)
+	console.log(names[i], confusionMarix.getConfusionTable(i));
+console.log('accuracy:', confusionMarix.getAccuracy());
+console.log(confusionMarix);
+
+let ybar = 0;
+for(let [i] of testPrediction)
+	ybar += i;
+ybar /= testPrediction.length;
 
 
 
-// console.log(dataset[0]);
-// let pca = new PCA(dataset);
-// console.log(pca.toJSON());
-// console.log(pca.getExplainedVariance());
-// console.log(pca.getEigenvalues());
-// console.log(pca.getEigenvectors());
-// console.log(pca.getExplainedVariance());
-// console.log(pca.getLoadings());
-
-// dataset = pca.predict(dataset);
-// trainingSet = pca.predict(trainingSet);
-// testSet = pca.predict(testSet);
+let regressor = new MLR(trainingSet, trainingPrediction);
 
 
-// console.log(trainingSet, trainingPrediction);
 
+let result = regressor.predict(testSet);
+// console.log('score', regressor.score());
 
-// let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
-// for(let i = 0; i < names.length; i++)
-// 	console.log(names[i], confusionMarix.getConfusionTable(i));
-// console.log('accuracy:', confusionMarix.getAccuracy());
+let num = 0, den = 0;
+for(let i = 0; i < result.length; i++) {
+	// console.log(testPrediction[i][0], result[i][0]);
+	num += Math.pow(testPrediction[i][0] - result[i][0], 2);
+	den += Math.pow(testPrediction[i][0] - ybar, 2);
+}
+let r2 = 1 - num / den;
 
-// let ybar = 0;
-// for(let [i] of testPrediction)
-// 	ybar += i;
-// ybar /= testPrediction.length;
-
-
-// let regressor = new MLR(trainingSet, trainingPrediction);
-// // console.log(regressor.toJSON());
-// // let regressor = new DecisionTreeRegression();
-// // regressor.train(trainingSet, trainingPrediction);
-
-// // classifier.train(trainingSet, trainingPrediction);
-// let result = regressor.predict(testSet);
-// // console.log('score', regressor.score());
-
-// let num = 0, den = 0;
-// for(let i = 0; i < result.length; i++) {
-// 	// console.log(testPrediction[i][0], result[i][0]);
-// 	num += Math.pow(testPrediction[i][0] - result[i][0], 2);
-// 	den += Math.pow(testPrediction[i][0] - ybar, 2);
-// }
-// let r2 = 1 - num / den;
-
-// console.log('r²:', r2);
+console.log('r²:', r2);
 
 /* Fonctions pour le serveur */
 
