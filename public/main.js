@@ -27,7 +27,7 @@ function treeAddChildren(elem, headers) {
 	}
 	return {
 		text : {
-			name: headers[elem.splitColumn]
+			name: headers[elem.splitColumn] + '(' + elem.splitFunction + ')'
 			// kind : elem.kind,
 			// gainFunction : elem.gainFunction,
 			// splitFunction: elem.splitFunction,
