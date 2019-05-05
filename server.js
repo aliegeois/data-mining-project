@@ -4,21 +4,18 @@
  * @typedef {Object.<string, Object.<string, number>>} Positionspic
  */
 
-const fs = require('fs'),
-	MLPCA = require('ml-pca'),
+const fs = require('fs'), // File System library
 	PCA = require('pca-js'),
-	Performance = require('ml-performance'),
-	{ DecisionTreeClassifier, DecisionTreeRegression } = require('ml-cart'),
-	{ RandomForestRegression } = require('ml-random-forest'),
+	{ DecisionTreeClassifier } = require('ml-cart'),
 	MLR = require('ml-regression-multivariate-linear'),
-	FNN = require('ml-fnn'),
-	KNN = require('ml-knn'),
 	crossValidation = require('ml-cross-validation'),
-	express = require('express'),
-	app = express(),
-	port = 8080;
+	express = require('express'), // serveur
+	app = express(), // serveur encore
+	port = 8080; // port, à changer si conflit
 
-function parseRaw(data) { // Gère les guillemets
+//
+
+function parseRaw(data) { // Parsing du .data: gestion des guillemets et préparation pour les caractères accentués
 	let clean = '',
 		string = false,
 		escaped = false;
@@ -57,6 +54,98 @@ function remove13(buffer) { // Enlève les retours chariot (\r)
 
 	return Buffer.from(clean);
 }
+
+function parseData() {
+	const raw_playlists = parseRaw(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
+	const raw_tracks = parseRaw(fs.readFileSync('data/tracks.data').toString()).split('\n');
+	raw_playlists.pop(); // La dernière ligne est vide, il faut la supprimer
+	raw_tracks.pop();
+
+	/** @type {Object.<string, Object.<string, {BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number, positions: {date: Date, position: number}[]}>>} */
+	let data = {};
+	/** @type {string[]} */
+	let playlist_headers = raw_playlists[0].split('\t');
+	/** @type {Object.<string, {BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}>} */
+	let tracks = {};
+	/** @type {string[]} */
+	let tracks_headers = raw_tracks[0].split('\t');
+
+
+	for(let i = 1; i < raw_tracks.length; i++) {
+		let line = raw_tracks[i].split('\t');
+		/** @type {{BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}} */
+		let value = {};
+		for(let j = 0; j < line.length; j++) {
+			let column;
+			switch(tracks_headers[j]) {
+			case 'BPM': // on garde le BPM tel quel: un entier
+				column = parseInt(line[j]);
+				break;
+			case 'Mode': // On met le mode en binaire: 1 pour major et 0 pour minor
+				if(line[j] === 'Major')
+					column = 1;
+				else if(line[j] === 'Minor')
+					column = 0;
+				else
+					column = null;
+				break;
+			case 'Danceability': // Toutes ces variables sont converties en pourcentages
+			case 'Valence':
+			case 'Energy':
+			case 'Acousticness':
+			case 'Instrumentalness':
+			case 'Liveness':
+			case 'Speechiness':
+				column = parseInt(line[j]) / 100;
+				break;
+			default: // De base on laisse la variable sous forme de texte (la key par exemple)
+				column = line[j];
+			}
+			if(tracks_headers[j] !== 'url')
+				value[tracks_headers[j]] = column;
+		}
+		tracks[line[0]] = value;
+	}
+
+	for(let i = 1; i < raw_playlists.length; i++) {
+		let line = raw_playlists[i].split('\t');
+
+		let song = { // Déstructuration des objets
+			title: line[1].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16))), // Convertir les caractères unicodes
+			artists: line[2].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16))),
+			...tracks[line[3]]
+		};
+		if(data.hasOwnProperty(line[5])) {
+			if(data[line[5]].hasOwnProperty(line[3])) {
+				data[line[5]][line[3]].positions.push({
+					date: new Date(line[4]),
+					position: parseInt(line[0])
+				});
+			} else {
+				data[line[5]][line[3]] = {
+					...song, // On passe tous les attributs de song à son parent
+					positions: [{
+						date: new Date(line[4]),
+						position: parseInt(line[0])
+					}]
+				};
+			}
+		} else {
+			data[line[5]] = {};
+			data[line[5]][line[3]] = {
+				...song,
+				positions: [{
+					date: new Date(line[4]),
+					position: parseInt(line[0])
+				}]
+			};
+		}
+	}
+
+	return data;
+}
+
+//
 
 /**
  * @param {Data} data
@@ -118,7 +207,6 @@ function addPositionPic(data) {
  * Indicateur binaire n°1 2.1, 2ème tiret
  */
 function getIsTop15(positionsPic) {
-	
 	let isTop15 = {};
 	for(let [playlist, songsUrl] of Object.entries(positionsPic)) { // Pour chaque playlist
 		let isTop15PlaylistRelativ = {};
@@ -190,6 +278,7 @@ function getTimeAppeared(data) {
  */
 function getMeanPositions(positions) {
 	let meanPositions = {};
+
 	for(let [playlist_name, song] of Object.entries(positions)) {
 		let myMap;
 		if(meanPositions.hasOwnProperty(playlist_name)) {
@@ -283,8 +372,8 @@ function normalize(data, stats) {
  * @param {Data} data 
  */
 function getStats(data) { // Obtenir la moyenne, la variance et l'écart-type
-
 	let stats = {};
+	
 	for(let [playlist, songs] of Object.entries(data)) {
 		stats[playlist] = {};
 		for(let infos of Object.values(songs)) {
@@ -370,7 +459,7 @@ function euclidianDistance(m1, m2) {
 
 /**
  * 
- * @returns {number}
+ * @param {Array} m
  */
 function euclidianDistanceNormalized(m) {
 	let sum = 0;
@@ -383,8 +472,8 @@ function euclidianDistanceNormalized(m) {
 
 /**
  * 
- * @param {*} mean Chanson moyenne (non normalisée)
  * @param {Data} data Données normalisées
+ * @param {number} k
  */
 function kClosestMusicsWithNormalisedData(data, k) {
 	let sortedData = {};
@@ -443,100 +532,6 @@ function getSongEvolution(data, song, playlist_name) {
 }
 
 /**
- * @returns {}
- */
-function parseData() {
-	const raw_playlists = parseRaw(remove13(fs.readFileSync('data/playlists.data')).toString()).split('\n');
-	const raw_tracks = parseRaw(fs.readFileSync('data/tracks.data').toString()).split('\n');
-	raw_playlists.pop(); // La dernière ligne est vide, il faut la supprimer
-	raw_tracks.pop();
-
-	/** @type {Object.<string, Object.<string, {BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number, positions: {date: Date, position: number}[]}>>} */
-	let data = {};
-	/** @type {string[]} */
-	let playlist_headers = raw_playlists[0].split('\t');
-	/** @type {Object.<string, {BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}>} */
-	let tracks = {};
-	/** @type {string[]} */
-	let tracks_headers = raw_tracks[0].split('\t');
-
-
-	for(let i = 1; i < raw_tracks.length; i++) {
-		let line = raw_tracks[i].split('\t');
-		/** @type {{BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number}} */
-		let value = {};
-		for(let j = 0; j < line.length; j++) {
-			let column;
-			switch(tracks_headers[j]) {
-			case 'BPM': // on garde le BPM tel quel: un entier
-				column = parseInt(line[j]);
-				break;
-			case 'Mode': // On met le mode en binaire: 1 pour major et 0 pour minor
-				if(line[j] === 'Major')
-					column = 1;
-				else if(line[j] === 'Minor')
-					column = 0;
-				else
-					column = null;
-				break;
-			case 'Danceability': // Toutes ces variables sont converties en pourcentages
-			case 'Valence':
-			case 'Energy':
-			case 'Acousticness':
-			case 'Instrumentalness':
-			case 'Liveness':
-			case 'Speechiness':
-				column = parseInt(line[j]) / 100;
-				break;
-			default: // De base on laisse la variable sous forme de texte (la key par exemple)
-				column = line[j];
-			}
-			if(tracks_headers[j] !== 'url')
-				value[tracks_headers[j]] = column;
-			// tracks[tracks_headers[j]].push(value);
-		}
-		tracks[line[0]] = value;
-	}
-
-	for(let i = 1; i < raw_playlists.length; i++) {
-		let line = raw_playlists[i].split('\t');
-
-		let o = { // Déstructuration des objets
-			title: line[1].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16))), // Convertir les caractères unicodes
-			artists: line[2].replace(/\\u[0-9a-f]{4}/g, match => String.fromCharCode(parseInt(match.substring(2), 16))),
-			...tracks[line[3]]
-		};
-		if(data.hasOwnProperty(line[5])) {
-			if(data[line[5]].hasOwnProperty(line[3])) {
-				data[line[5]][line[3]].positions.push({
-					date: new Date(line[4]),
-					position: parseInt(line[0])
-				});
-			} else {
-				data[line[5]][line[3]] = {
-					...o, // On passe tous les attributs de o à son parent
-					positions: [{
-						date: new Date(line[4]),
-						position: parseInt(line[0])
-					}]
-				};
-			}
-		} else {
-			data[line[5]] = {};
-			data[line[5]][line[3]] = {
-				...o,
-				positions: [{
-					date: new Date(line[4]),
-					position: parseInt(line[0])
-				}]
-			};
-		}
-	}
-
-	return data;
-}
-
-/**
  * 
  * @param {Array} a
  * @param {Array} b
@@ -548,9 +543,6 @@ function shuffle(a, b) {
 		[b[i], b[j]] = [b[j], b[i]];
 	}
 }
-
-
-
 
 //
 
@@ -587,15 +579,32 @@ function splitData(data, column) {
 	};
 }
 
-
-let names = Object.keys(dataExtended);
-
 function acp() {
 	let { dataset } = splitData(data, (_, name) => names.indexOf(name));
 
 	let vectors = PCA.getEigenVectors(dataset);
 
-	return PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData;
+	let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData;
+	// console.log(adData);
+	let outliers = [];
+
+	let flat = [];
+	for(let [playlist_name, songs] of Object.entries(data)) {
+		for(let [song_url, infos] of Object.entries(songs)) {
+			flat.push({
+				playlist: playlist_name,
+				url: song_url,
+				...infos
+			});
+		}
+	}
+
+	for(let i = 0; i < dataset.length; i++) {
+		if(dataset[i][0] == 47)
+			console.log(i, flat[i]);
+	}
+
+	return adData;
 }
 
 // let topTwo = PCA.computePercentageExplained(vectors, vectors[1]);
@@ -609,10 +618,9 @@ function predictPlaylist() { // Decision Tree Classifier
 	let result = classifier.predict(testSet);
 
 	let g = 0;
-	for(let i = 0; i < result.length; i++) {
+	for(let i = 0; i < result.length; i++)
 		if(result[i] === testPrediction[i])
 			g++; // Nombre d'éléments correctement prédits
-	}
 
 	return {
 		headers: ['BPM', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'],
@@ -620,7 +628,7 @@ function predictPlaylist() { // Decision Tree Classifier
 		accuracy: g / testPrediction.length
 	};
 }
-console.log(predictPlaylist().tree);
+// console.log(predictPlaylist().tree);
 
 function crossVal() { // Validation croisée par arbre de décision 
 	let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
@@ -681,6 +689,11 @@ let meanMusicsPerPlaylist = getMeanMusics(dataExtended); // Calule la musique mo
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions); // Récupère la musique la plus proche de la moyenne pour chaque playlist
 let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
 
+
+let names = Object.keys(dataExtended);
+
+
+acp();
 
 /* Fonctions pour le serveur */
 
