@@ -21,7 +21,9 @@ h4 {
     margin: 2%;
 }
 
-
+#c_2_3 {
+    display: block;
+}
 
 .buttons {
     background-color: #ef6c00;
