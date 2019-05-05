@@ -549,33 +549,8 @@ function shuffle(a, b) {
 	}
 }
 
-// let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
 
-let data = parseData();
-addVariables(data);
-// console.log(Object.entries(data.fr)[1][1].positions);
-// return;
-// console.log(data.metal['https://www.spotontrack.com/track/my-own-summer-shove-it/18052']);
-let positions = getPositions(data);
-let positionsPic = getPositionsPic(data);
-let isTop15 = getIsTop15(positionsPic);
-let timeAppeared = getTimeAppeared(data);
-let meanPositions = getMeanPositions(positions);
-let meanPosInf15 = getMeanPosInf15(meanPositions);
-let dataExtended = addColumns(data);
-let stats = getStats(dataExtended);
-let normalized = normalize(dataExtended, stats);
-let meanMusics = getMeanMusics(dataExtended);
-let closest = kClosestMusicsWithNormalisedData(normalized, 5);
 
-/*Object.entries(stats).forEach(([playlist, st]) => {
-	console.log(Object.entries(st).sort(([vb1, vl1], [vb2, vl2]) => vl2.variance - vl1.variance));
-});*/
-
-let meanMusicsPerPlaylist = getMeanMusics(dataExtended);
-let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
-let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
-// console.log(closest);
 
 //
 
@@ -594,23 +569,20 @@ function splitData(data, column) {
 			for(let [variable, valeur] of Object.entries(song))
 				if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
 					u.push(valeur);
-			// u.push(song.BPM);
 			dataset.push(u);
-			// predictions.push(names.indexOf(name));
-			// predictions.push([d.playlistDuration]);
 			predictions.push(column(song, name));
 		}
 	});
-	shuffle(dataset, predictions);
+	shuffle(dataset, predictions); // Mélange du tableau
 
-	let separator = Math.floor(4 * dataset.length / 5);
+	let separator = Math.floor(4 * dataset.length / 5); // 80% entrainement, 20% test
 
 	return {
-		dataset,
-		predictions,
-		trainingSet: dataset.slice(0, separator),
-		trainingPrediction: predictions.slice(0, separator),
-		testSet: dataset.slice(separator),
+		dataset, // le dataset sans la variable à prédire
+		predictions, // la variable à prédire
+		trainingSet: dataset.slice(0, separator), // 80% du dataset sans la variable à prédire
+		trainingPrediction: predictions.slice(0, separator), // 80% de la variable à prédire associée à la variable précédente
+		testSet: dataset.slice(separator), // même chose mais à 20%
 		testPrediction: predictions.slice(separator)
 	};
 }
@@ -618,32 +590,28 @@ function splitData(data, column) {
 
 let names = Object.keys(dataExtended);
 
-let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
+function acp() {
+	let { dataset } = splitData(data, (_, name) => names.indexOf(name));
 
-let vectors = PCA.getEigenVectors(dataset);
-// console.log(dataset);
-// console.log(vectors);
-// for(let i = 0; i < vectors.length; i++)
-// 	console.log(i, PCA.computePercentageExplained(vectors, vectors[i]));
-let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData;
-// console.log(adData);
+	let vectors = PCA.getEigenVectors(dataset);
+
+	return PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData;
+}
 
 // let topTwo = PCA.computePercentageExplained(vectors, vectors[1]);
 
 // 2.4.1
 function predictPlaylist() { // Decision Tree Classifier
 	let { trainingSet, trainingPrediction, testSet, testPrediction } = splitData(data, (_, name) => names.indexOf(name));
-	// console.log(trainingSet, trainingPrediction);
-	// console.log(testPrediction);
+
 	let classifier = new DecisionTreeClassifier();
 	classifier.train(trainingSet, trainingPrediction);
 	let result = classifier.predict(testSet);
-	// console.log(res1);
+
 	let g = 0;
 	for(let i = 0; i < result.length; i++) {
-		// console.log(res1[i], testPrediction[i]);
 		if(result[i] === testPrediction[i])
-			g++;
+			g++; // Nombre d'éléments correctement prédits
 	}
 
 	return {
@@ -654,37 +622,64 @@ function predictPlaylist() { // Decision Tree Classifier
 }
 console.log(predictPlaylist().tree);
 
-// let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
-// for(let i = 0; i < names.length; i++)
-// 	console.log(names[i], confusionMarix.getConfusionTable(i));
-// console.log('accuracy:', confusionMarix.getAccuracy());
-// console.log(confusionMarix);
+function crossVal() { // Validation croisée par arbre de décision 
+	let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
+
+	let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
+	for(let i = 0; i < names.length; i++)
+		console.log(names[i], confusionMarix.getConfusionTable(i));
+	console.log('accuracy:', confusionMarix.getAccuracy());
+	console.log(confusionMarix);
+}
+
 
 // 2.4.2
 function linearRegression() { // Effectue une régression linéaire sur la durée de la chanson dans la playlist
+	// Découpe du dataset
 	let { trainingSet, trainingPrediction, testSet, testPrediction } = splitData(data, d => [d.playlistDuration]);
 
+	// Création de la fonction de régression (régression multi-linéaire)
 	let regressor = new MLR(trainingSet, trainingPrediction);
+	// Prédiction sur le jeu de test
 	let result = regressor.predict(testSet);
 
+	// Moyenne en y
 	let ybar = 0;
 	for(let [i] of testPrediction)
 		ybar += i;
 	ybar /= testPrediction.length;
 
-	// console.log('score', regressor.score());
-
+	// Calcul de r2
 	let num = 0, den = 0;
 	for(let i = 0; i < result.length; i++) {
-		// console.log(testPrediction[i][0], result[i][0]);
 		num += Math.pow(testPrediction[i][0] - result[i][0], 2);
 		den += Math.pow(testPrediction[i][0] - ybar, 2);
 	}
 	let r2 = 1 - num / den;
 
-	return { r2 };
+	return r2;
 }
-// linearRegression();
+
+//
+
+let data = parseData();
+
+addVariables(data); // Ajoute les variables relatives à la position
+let positions = getPositions(data); // Liste des positions de chaque chanson
+let positionsPic = getPositionsPic(data); // Meilleures positions de chaque chanson
+let isTop15 = getIsTop15(positionsPic); // La position maximale est-elle < 15 ?
+let timeAppeared = getTimeAppeared(data); // Durée pendant laquelle chaque chanson apparait dans la playlist
+let meanPositions = getMeanPositions(positions); // Position moyenne de chaque chanson dans la playlist
+let meanPosInf15 = getMeanPosInf15(meanPositions); // La position moyenen est-elle < 15 ?
+
+let dataExtended = addColumns(data); // Découpe du mode en variables binaires
+let stats = getStats(dataExtended); // Moyenne, variance, écart-type. Utile pour la normalisation
+let normalized = normalize(dataExtended, stats); // ...
+let closest = kClosestMusicsWithNormalisedData(normalized, 5); // Renvoie les k musiques les plus proches de la moyenne
+
+let meanMusicsPerPlaylist = getMeanMusics(dataExtended); // Calule la musique moyenne pour chaque playlist
+let bestMeanPositionSong = getBestMeanPositionSong(meanPositions); // Récupère la musique la plus proche de la moyenne pour chaque playlist
+let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
 
 
 /* Fonctions pour le serveur */
@@ -774,7 +769,7 @@ app.get('/getSongEvolution', (req, res) => {
 
 app.get('/adjustedData', (req, res) => {
 	res.setHeader('Content-Type', 'application/json');
-	res.end(JSON.stringify(adData));
+	res.end(JSON.stringify(acp()));
 });
 
 // 2_4_1
