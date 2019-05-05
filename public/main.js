@@ -7,7 +7,7 @@ function transformTree(rawJson, div, headers) {
 	let tree = {};
 	tree.chart = {};
 	tree.chart.container = '#' + div;
-	tree.chart.rootOrientation  = 'WEST';
+	tree.chart.rootOrientation  = 'NORTH';
 	tree.nodeStructure = treeAddChildren(rawJson, headers);
 	return tree;
 }
