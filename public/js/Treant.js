@@ -1854,7 +1854,6 @@
                 if (key.startsWith("data-")) {
                     node.setAttribute(key, this.text[key]);
                 } else {
-                    
                     var textElement = document.createElement(this.text[key].href ? 'a' : 'p');
                     
                     // make an <a> element if required

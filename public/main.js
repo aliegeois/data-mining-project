@@ -3,33 +3,39 @@ function formateDate(d) {
 	return (date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear()); // Month +1 car les mois commecent à 0
 }
 
-function transformTree(rawJson, div) {
+function transformTree(rawJson, div, headers) {
 	let tree = {};
 	tree.chart = {};
 	tree.chart.container = '#' + div;
-	tree.nodeStructure = treeAddChildren(rawJson);
+	tree.chart.rootOrientation  = 'WEST';
+	tree.nodeStructure = treeAddChildren(rawJson, headers);
 	return tree;
 }
 
-function treeAddChildren(elem) {
-	let left ={};
+function treeAddChildren(elem, headers) {
+	let left = {};
 	if(elem.left) {
-		left = treeAddChildren(elem.left);
+		left = treeAddChildren(elem.left, headers);
 	}
 	let right = {};
 	if(elem.right) {
-		right = treeAddChildren(elem.right);
+		right = treeAddChildren(elem.right, headers);
+	}
+
+	if(elem.splitColumn == undefined) {
+		return {};
 	}
 	return {
 		text : {
-			kind : elem.kind,
-			gainFunction : elem.gainFunction,
-			splitFunction: elem.splitFunction,
-			minNumSamples: elem.minNumSamples,
-			maxDepth: elem.maxDepth,
-			splitValue: elem.splitValue,
-			splitColumn: elem.splitColumn,
-			gain: elem.gain
+			name: headers[elem.splitColumn]
+			// kind : elem.kind,
+			// gainFunction : elem.gainFunction,
+			// splitFunction: elem.splitFunction,
+			// minNumSamples: elem.minNumSamples,
+			// maxDepth: elem.maxDepth,
+			// splitValue: elem.splitValue,
+			// splitColumn: elem.splitColumn,
+			// gain: elem.gain
 		},
 		children: [
 			left,
@@ -396,8 +402,32 @@ onload = () => {
 				acc.appendChild(accuracy);
 				result.appendChild(acc);
 				
-				let tree_config = transformTree(res.tree, 'question2_4_1tree');
+				let tree_config = transformTree(res.tree, 'question2_4_1tree', res.headers);
+				// let tree_config = {
+				// 	chart: {
+				// 		container: "#question2_4_1tree"
+				// 	},
+					
+				// 	nodeStructure: {
+				// 		text: { name: "Parent node" },
+				// 		children: [
+				// 			{
+				// 				text: { name: "First child" },
+				// 				children: [
+				// 					{},
+				// 					{}
+				// 				]
+				// 			},
+				// 			{
+				// 				text: { name: "Second child" }
+				// 			}
+				// 		]
+				// 	}
+				// };
+				
+				console.log(tree_config);
 				let tree = new Treant(tree_config);
+				
 				
 				// for(let [playlist, songsUrl] of Object.entries(res)) {
 				// 	let elemPlaylist = document.createElement('div');
