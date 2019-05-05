@@ -1,9 +1,12 @@
 /**
  * @typedef {Object.<string, Object.<string, {BPM: number, Key: string, Mode: boolean, Danceability: number, Valence: number, Energy: number, Acousticness: number, Instrumentalness: number, Liveness: number, Speechiness: number, positions: {date: Date, position: number}[]}>>} Data
+ * @typedef {Object.<string, Object.<string, number[]>>} Positions
+ * @typedef {Object.<string, Object.<string, number>>} Positionspic
  */
 
 const fs = require('fs'),
-	PCA = require('ml-pca'),
+	MLPCA = require('ml-pca'),
+	PCA = require('pca-js'),
 	{ DecisionTreeClassifier, DecisionTreeRegression } = require('ml-cart'),
 	{ RandomForestRegression } = require('ml-random-forest'),
 	MLR = require('ml-regression-multivariate-linear'),
@@ -17,26 +20,10 @@ const fs = require('fs'),
 function parseRaw(data) { // Gère les guillemets
 	let clean = '',
 		string = false,
-		//unicode = -1,
-		//str_unicode = '',
 		escaped = false;
 	for(let ch of data) {
 		if(string) {
-			/*if(unicode !== -1) {
-				if(unicode === 4) {
-					let _char = String.fromCharCode(parseInt(str_unicode, 16));
-					clean += _char;
-					console.log(str_unicode, _char);
-					str_unicode = '';
-					unicode = -1;
-				} else {
-					str_unicode += ch;
-					unicode++;
-				}
-			} else */if(escaped) {
-				/*if(ch === 'u') {
-					unicode = 0;
-				} else {*/
+			if(escaped) {
 				if(ch === 'u') {
 					clean += '\\u';
 				} else {
@@ -71,15 +58,10 @@ function remove13(buffer) { // Enlève les retours chariot (\r)
 }
 
 /**
- * @param {Data} data 
+ * @param {Data} data
+ * @returns {Positions}
  */
 function getPositions(data) {
-	/**
-	 * Key 1: nom de la playlist
-	 * Key 2: url de la chanson
-	 * Value 2: tableau des positions de la chanson dans la playlist
-	 * @type {Map<string, Map<string, number[]>>}
-	 */
 	let positions = {};
 
 	for(let [playlist, songs] of Object.entries(data)) {
@@ -95,6 +77,7 @@ function getPositions(data) {
 /**
  * 2.1 - 1er tiret
  * @param {Data} data 
+ * @returns {Positionspic}
  */
 function getPositionsPic(data) {
 	let positionsPic = {};
@@ -152,24 +135,24 @@ function getIsTop15(positionsPic) {
  * @param {Data} data 
  */
 function addVariables(data) {
-	for(let [playlist, songs] of Object.entries(data)) { // Pour chaque playlist
+	for(let [playlist_name, songs] of Object.entries(data)) { // Pour chaque playlist
 		for(let [song_url, song_data] of Object.entries(songs)) { // Pour chaque musique
 			let bestPosition = Number.MAX_SAFE_INTEGER; // On initialise la position pic à un très grand nombre
 
-			data[playlist][song_url].playlistDuration = 0; // Durée de la chanson dans la playlist
-			data[playlist][song_url].playlistMeanPos = 0; // Position moyenne de la chanson dans la playlist
+			data[playlist_name][song_url].playlistDuration = 0; // Durée de la chanson dans la playlist
+			data[playlist_name][song_url].playlistMeanPos = 0; // Position moyenne de la chanson dans la playlist
 
 			for(let positions of Object.values(song_data.positions)) { // Pour toutes les positions
 				if(positions.position < bestPosition) // Si on trouve une meilleure position, on modifie
 					bestPosition = positions.position;
 				
-				data[playlist][song_url].playlistDuration++;
-				data[playlist][song_url].playlistMeanPos += positions.position;
+				data[playlist_name][song_url].playlistDuration++;
+				data[playlist_name][song_url].playlistMeanPos += positions.position;
 			}
-			data[playlist][song_url].positionPic = bestPosition; // Meilleure position de la chanson dans la playlist
-			data[playlist][song_url].posPicInf15 = bestPosition < 15; // La chanson a-t'elle une position pic < 15 ?
-			data[playlist][song_url].playlistMeanPos /= Object.keys(song_data.positions).length;
-			data[playlist][song_url].playlistMeanPosInf15 = data[playlist][song_url].playlistMeanPos < 15; // La position moyenne de la chanson est-elle < 15 ?
+			data[playlist_name][song_url].positionPic = bestPosition; // Meilleure position de la chanson dans la playlist
+			data[playlist_name][song_url].posPicInf15 = bestPosition < 15; // La chanson a-t'elle une position pic < 15 ?
+			data[playlist_name][song_url].playlistMeanPos /= Object.keys(song_data.positions).length;
+			data[playlist_name][song_url].playlistMeanPosInf15 = data[playlist_name][song_url].playlistMeanPos < 15; // La position moyenne de la chanson est-elle < 15 ?
 		}
 	}
 }
@@ -183,19 +166,17 @@ function addVariables(data) {
  * @param {Data} data
  */
 function getTimeAppeared(data) {
+	let timeAppeared = {};
 
-	let times = {};
-
-	for(let [playlist, song] of Object.entries(data)) { // Pour chaque playlist
+	for(let [playlist_name, songs] of Object.entries(data)) { // Pour chaque playlist
 		let times_playlistSpecific = {};
-		for(let [songURL, songData] of Object.entries(song)) { // Pour chaque chanson
-			times_playlistSpecific[songURL] = songData.positions.length; // songData.positions est la liste des positions de la chanson au fil du temps
+		for(let [song_url, song_data] of Object.entries(songs)) { // Pour chaque chanson
+			times_playlistSpecific[song_url] = song_data.positions.length; // song_data.positions est la liste des positions de la chanson au fil du temps
 		}
-		times[playlist] = times_playlistSpecific;
+		timeAppeared[playlist_name] = times_playlistSpecific;
 	}
 
-	return times;
-
+	return timeAppeared;
 }
 
 /**
@@ -507,11 +488,7 @@ function parseData() {
 				column = parseInt(line[j]) / 100;
 				break;
 			default: // De base on laisse la variable sous forme de texte (la key par exemple)
-				// console.log(line[j]);
-				column = line[j].replace(/\\u[0-9a-f]{4}/g, match => {
-					console.log(match, match.substring(2), parseInt(match.substring(2), 16), String.fromCharCode(parseInt(match.substring(2), 16)));
-					return String.fromCharCode(parseInt(match.substring(2), 16));
-				});
+				column = line[j];
 			}
 			if(tracks_headers[j] !== 'url')
 				value[tracks_headers[j]] = column;
@@ -559,8 +536,9 @@ function parseData() {
 }
 
 /**
- * Shuffles array in place. ES6 version
- * @param {Array} a items An array containing the items.
+ * 
+ * @param {Array} a
+ * @param {Array} b
  */
 function shuffle(a, b) {
 	for(let i = a.length - 1; i > 0; i--) {
@@ -568,7 +546,6 @@ function shuffle(a, b) {
 		[a[i], a[j]] = [a[j], a[i]];
 		[b[i], b[j]] = [b[j], b[i]];
 	}
-	return a;
 }
 
 // let { playlists, playlist_headers, tracks, tracks_headers } = parseData();
@@ -584,17 +561,17 @@ let isTop15 = getIsTop15(positionsPic);
 let timeAppeared = getTimeAppeared(data);
 let meanPositions = getMeanPositions(positions);
 let meanPosInf15 = getMeanPosInf15(meanPositions);
-let data2 = addColumns(data);
-let stats = getStats(data2);
-let normalized = normalize(data2, stats);
-let meanMusics = getMeanMusics(data2);
+let dataExtended = addColumns(data);
+let stats = getStats(dataExtended);
+let normalized = normalize(dataExtended, stats);
+let meanMusics = getMeanMusics(dataExtended);
 let closest = kClosestMusicsWithNormalisedData(normalized, 5);
 
 /*Object.entries(stats).forEach(([playlist, st]) => {
 	console.log(Object.entries(st).sort(([vb1, vl1], [vb2, vl2]) => vl2.variance - vl1.variance));
 });*/
 
-let meanMusicsPerPlaylist = getMeanMusics(data2);
+let meanMusicsPerPlaylist = getMeanMusics(dataExtended);
 let bestMeanPositionSong = getBestMeanPositionSong(meanPositions);
 let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my-own-summer-shove-it/18052', 'metal');
 // console.log(closest);
@@ -615,6 +592,7 @@ function splitData(data, column) {
 			for(let [variable, valeur] of Object.entries(song))
 				if(['BPM', /*'A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#',*/ 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'].includes(variable))
 					u.push(valeur);
+			// u.push(song.BPM);
 			dataset.push(u);
 			// predictions.push(names.indexOf(name));
 			// predictions.push([d.playlistDuration]);
@@ -624,10 +602,6 @@ function splitData(data, column) {
 	shuffle(dataset, predictions);
 
 	let separator = Math.floor(4 * dataset.length / 5);
-	// let trainingSet = dataset.slice(0, separator);
-	// let trainingPrediction = predictions.slice(0, separator);
-	// let testSet = dataset.slice(separator);
-	// let testPrediction = predictions.slice(separator);
 
 	return {
 		dataset,
@@ -640,7 +614,7 @@ function splitData(data, column) {
 }
 
 
-let names = Object.keys(data2);
+let names = Object.keys(dataExtended);
 
 // let dataset = [];
 // let predictions = [];
@@ -666,37 +640,64 @@ let names = Object.keys(data2);
 let { trainingSet, trainingPrediction, testSet, testPrediction } = splitData(data, d => [d.playlistDuration]);
 let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
 
+let vectors = PCA.getEigenVectors(dataset);
+// console.log(vectors);
+// for(let i = 0; i < vectors.length; i++)
+// 	console.log(i, PCA.computeAdjustedData(vectors, vectors[i]));
+let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).formattedAdjustedData;
+// console.log(adData);
+
+// let topTwo = PCA.computePercentageExplained(vectors, /*vectors[0], */vectors[1]);
+// console.log(topTwo);
+
+
+
+// console.log(dataset[0]);
+// let pca = new PCA(dataset);
+// console.log(pca.toJSON());
+// console.log(pca.getExplainedVariance());
+// console.log(pca.getEigenvalues());
+// console.log(pca.getEigenvectors());
+// console.log(pca.getExplainedVariance());
+// console.log(pca.getLoadings());
+
+// dataset = pca.predict(dataset);
+// trainingSet = pca.predict(trainingSet);
+// testSet = pca.predict(testSet);
+
+
 // console.log(trainingSet, trainingPrediction);
 
 
-let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
-for(let i = 0; i < names.length; i++)
-	console.log(names[i], confusionMarix.getConfusionTable(i));
-console.log('accuracy:', confusionMarix.getAccuracy());
+// let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
+// for(let i = 0; i < names.length; i++)
+// 	console.log(names[i], confusionMarix.getConfusionTable(i));
+// console.log('accuracy:', confusionMarix.getAccuracy());
 
-let ybar = 0;
-for(let [i] of testPrediction)
-	ybar += i;
-ybar /= testPrediction.length;
+// let ybar = 0;
+// for(let [i] of testPrediction)
+// 	ybar += i;
+// ybar /= testPrediction.length;
 
 
-let regressor = new MLR(trainingSet, trainingPrediction);
-// let regressor = new DecisionTreeRegression();
-// regressor.train(trainingSet, trainingPrediction);
+// let regressor = new MLR(trainingSet, trainingPrediction);
+// // console.log(regressor.toJSON());
+// // let regressor = new DecisionTreeRegression();
+// // regressor.train(trainingSet, trainingPrediction);
 
-// classifier.train(trainingSet, trainingPrediction);
-let result = regressor.predict(testSet);
-// console.log('score', regressor.score());
+// // classifier.train(trainingSet, trainingPrediction);
+// let result = regressor.predict(testSet);
+// // console.log('score', regressor.score());
 
-let num = 0, den = 0;
-for(let i = 0; i < result.length; i++) {
-	// console.log(testPrediction[i][0], result[i][0]);
-	num += Math.pow(testPrediction[i][0] - result[i][0], 2);
-	den += Math.pow(testPrediction[i][0] - ybar, 2);
-}
-let r2 = 1 - num / den;
+// let num = 0, den = 0;
+// for(let i = 0; i < result.length; i++) {
+// 	// console.log(testPrediction[i][0], result[i][0]);
+// 	num += Math.pow(testPrediction[i][0] - result[i][0], 2);
+// 	den += Math.pow(testPrediction[i][0] - ybar, 2);
+// }
+// let r2 = 1 - num / den;
 
-console.log('r²:', r2);
+// console.log('r²:', r2);
 
 /* Fonctions pour le serveur */
 
@@ -781,6 +782,11 @@ app.get('/getSongEvolution', (req, res) => {
 	let chosenPlaylist = req.header('playlist');
 	let chosenSongEvolution = getSongEvolution(data, chosenSong, chosenPlaylist);
 	res.end(JSON.stringify(chosenSongEvolution));
+});
+
+app.get('/adjustedData', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	res.end(JSON.stringify(adData));
 });
 
 // 

@@ -300,6 +300,29 @@ onload = () => {
 				result.appendChild(canvas);
 			});
 	});
+
+	document.getElementById('question_2_3').addEventListener('click', () => {
+		fetch('/adjustedData')
+			.then(res => res.json())
+			.then(res => {
+				let data = [];
+				for(let i = 0; i < res[0].length; i++)
+					data.push({ x: res[0][i], y: res[1][i] });
+				
+				let can = document.getElementById('c_2_3');
+				new Chart(can.getContext('2d'), {
+					type: 'scatter',
+					data: {
+						datasets: [{
+							label: 'ACP',
+							data: data
+						}]
+					}
+				});
+			});
+		
+
+	});
 	
 
 	//addRapportText('2_1_1');
