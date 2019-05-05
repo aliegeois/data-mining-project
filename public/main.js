@@ -194,26 +194,48 @@ onload = () => {
 	});
 
 	document.getElementById('question2_2_1').addEventListener('click', () => {
-		const result = document.getElementById('resultQuestion2_2_2');
+		const result = document.getElementById('resultQuestion2_2_1');
 		result.innerHTML = '';
-		fetch('/getMeanMusics')
+		fetch('/data.json')
 			.then(res => res.json())
 			.then(res => {
-				for(let [playlist, musicCaracteristics] of Object.entries(res)) {
-					let elemPlaylist = document.createElement('div');
-					let elemTitlePlaylist = document.createElement('h6');
-					let titlePlaylist = document.createTextNode('Profil de la chanson ' + playlist + ' moyenne');
-					elemTitlePlaylist.appendChild(titlePlaylist);
-					elemPlaylist.appendChild(elemTitlePlaylist);
-
-					for(let [key, value] of Object.entries(musicCaracteristics)) {
-						let elemLine = document.createElement('p');
-						elemLine.innerHTML = key + ' : ' + value;
-						elemPlaylist.appendChild(elemLine);
+				let variables = ['BPM', 'Mode', 'Danceability', 'Valence', 'Energy', 'Acousticness', 'Instrumentalness', 'Liveness', 'Speechiness'];
+				let data = [];
+				for(let songs of Object.values(res)) {
+					// console.log(songs);
+					for(let infos of Object.values(songs)) {
+						let u = [];
+						for(let [variable, valeur] of Object.entries(infos))
+							if(variables.includes(variable))
+								u.push(valeur);
+						data.push(u);
 					}
-
-					result.appendChild(elemPlaylist);
 				}
+
+				let table = document.createElement('table');
+				for(let i = 0; i < variables.length; i++) {
+					let tr = document.createElement('tr');
+					for(let j = 0; j < variables.length; j++) {
+						let td = document.createElement('td');
+						let canvas = document.createElement('canvas');
+						new Chart(canvas.getContext('2d'), {
+							type: 'scatter',
+							data: {
+								datasets: [{
+									label: `x: ${variables[i]}, y: ${variables[j]}`,
+									data: data.map(e => ({ x: e[i], y: e[j] }))
+								}]
+							}
+						});
+						td.appendChild(canvas);
+						td.style.width = '11%';
+						td.style.height = '180px';
+						tr.appendChild(td);
+					}
+					table.appendChild(tr);
+				}
+				table.className += ' responsive-table';
+				result.appendChild(table);
 			});
 	});
 
@@ -372,7 +394,7 @@ onload = () => {
 			.then(res => {
 				let data = [];
 				for(let i = 0; i < res[0].length; i++)
-					data.push({ x: res[0][i], y: res[1][i] });
+					data.push({ y: res[0][i], x: res[1][i] });
 				
 				let can = document.getElementById('c_2_3');
 				new Chart(can.getContext('2d'), {
