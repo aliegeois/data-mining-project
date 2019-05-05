@@ -3,6 +3,41 @@ function formateDate(d) {
 	return (date.getDate() + '/' + (date.getMonth()+1) + '/' + date.getFullYear()); // Month +1 car les mois commecent à 0
 }
 
+function transformTree(rawJson, div) {
+	let tree = {};
+	tree.chart = {};
+	tree.chart.container = '#' + div;
+	tree.nodeStructure = treeAddChildren(rawJson);
+	return tree;
+}
+
+function treeAddChildren(elem) {
+	let left ={};
+	if(elem.left) {
+		left = treeAddChildren(elem.left);
+	}
+	let right = {};
+	if(elem.right) {
+		right = treeAddChildren(elem.right);
+	}
+	return {
+		text : {
+			kind : elem.kind,
+			gainFunction : elem.gainFunction,
+			splitFunction: elem.splitFunction,
+			minNumSamples: elem.minNumSamples,
+			maxDepth: elem.maxDepth,
+			splitValue: elem.splitValue,
+			splitColumn: elem.splitColumn,
+			gain: elem.gain
+		},
+		children: [
+			left,
+			right
+		]
+	};
+
+}
 /*function addRapportText(questionNumber) {
 	fetch('/contentFile', {
 		headers: new Headers({
@@ -371,6 +406,38 @@ onload = () => {
 	});
 	
 
+	document.getElementById('question2_4_1').addEventListener('click', () => {
+		const result = document.getElementById('resultQuestion2_4_1');
+		result.innerHTML = 'Calcul en cours...';
+		fetch('/predictPlaylist')
+			.then(res => res.json())
+			.then(res => {
+				result.innerHTML = '';
+				let acc = document.createElement('h6');
+				let accuracy = document.createTextNode('Accuracy : ' + res.accuracy);
+				acc.appendChild(accuracy);
+				result.appendChild(acc);
+				
+				let tree_config = transformTree(res.tree, 'question2_4_1tree');
+				let tree = new Treant(tree_config);
+				
+				// for(let [playlist, songsUrl] of Object.entries(res)) {
+				// 	let elemPlaylist = document.createElement('div');
+				// 	let elemTitlePlaylist = document.createElement('h6');
+				// 	let titlePlaylist = document.createTextNode(playlist);
+				// 	elemTitlePlaylist.appendChild(titlePlaylist);
+				// 	elemPlaylist.appendChild(elemTitlePlaylist);
+
+				// 	for(let [songsURL, meanPosition] of Object.entries(songsUrl)) {
+				// 		let elemLine = document.createElement('p');
+				// 		elemLine.innerHTML = `${songsURL} : <span class="toBold">${meanPosition}</span>`;
+				// 		elemPlaylist.appendChild(elemLine);
+				// 	}
+
+				// 	result.appendChild(elemPlaylist);
+				// }
+			});
+	});
 	//addRapportText('2_1_1');
 
 	/*document.getElementById('test2').addEventListener('click', () => {

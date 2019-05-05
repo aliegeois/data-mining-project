@@ -777,7 +777,14 @@ app.get('/adjustedData', (req, res) => {
 	res.end(JSON.stringify(adData));
 });
 
-// 
+// 2_4_1
+app.get('/predictPlaylist', (req, res) => {
+	res.setHeader('Content-Type', 'application/json');
+	let predictedPlaylist = predictPlaylist();
+	console.log('Predicted : ');
+	console.log(predictedPlaylist);
+	res.end(JSON.stringify(predictedPlaylist));
+});
 
 /* Function for the notebook */
 app.get('/contentFile', (req, res) => {
