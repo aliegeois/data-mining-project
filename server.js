@@ -608,7 +608,7 @@ function predictPlaylist() { // Decision Tree Classifier
 		accuracy: g / testPrediction.length
 	};
 }
-// console.log(predictPlaylist().tree);
+
 
 function crossVal() { // Validation croisée par arbre de décision
 	let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
@@ -649,7 +649,7 @@ function linearRegression() { // Effectue une régression linéaire sur la duré
 	return { weights: regressor.weights, r2 };
 }
 
-//
+
 
 let data = parseData();
 
@@ -673,9 +673,6 @@ let bestMeanPositionSong = getBestMeanPositionSong(meanPositions); // Récupère
 
 let names = Object.keys(dataExtended);
 
-
-for(let i = 0; i < 10; i++)
-	console.log(linearRegression().r2);
 
 /* Fonctions pour le serveur */
 
@@ -787,4 +784,5 @@ app.get('/contentFile', (req, res) => {
 
 app.listen(port, () => {
 	console.log('Serveur online');
+	console.log('Connectez vous sur http://localhost:8080/ pour pouvoir éxécuter les fonctions');
 });
