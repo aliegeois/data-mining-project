@@ -38,6 +38,23 @@ function treeAddChildren(elem) {
 	};
 
 }
+
+// function convertTree(tree, headers) {
+// 	function _convert(t, r) {
+// 		r = {
+// 			text: headers[t.splitColumn],
+// 			children: [
+// 				_convert(t.left)
+// 			]
+// 		}
+// 	}
+
+// 	let root = {
+// 		text: 'dbar',
+// 		children: [_convert(tree)]
+// 	};
+
+// }
 /*function addRapportText(questionNumber) {
 	fetch('/contentFile', {
 		headers: new Headers({
@@ -216,14 +233,17 @@ onload = () => {
 							type: 'scatter',
 							data: {
 								datasets: [{
-									label: `x: ${variables[i]}, y: ${variables[j]}`,
+									// label: `x: ${variables[i]}, y: ${variables[j]}`,
 									data: data.map(e => ({ x: e[i], y: e[j] }))
 								}]
+							},
+							options: {
+								legend: false
 							}
 						});
 						td.appendChild(canvas);
 						td.style.width = '11%';
-						td.style.height = '180px';
+						// td.style.height = '180px';
 						tr.appendChild(td);
 					}
 					table.appendChild(tr);
