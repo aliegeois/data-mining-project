@@ -585,6 +585,7 @@ let songEvolution = getSongEvolution(data, 'https://www.spotontrack.com/track/my
  * @param {function(Object, string)} column
  */
 function splitData(data, column) {
+	column = column | (()=>{});
 	let dataset = [];
 	let predictions = [];
 	Object.entries(data).forEach(([name, playlist]) => {
@@ -620,10 +621,11 @@ let names = Object.keys(dataExtended);
 let { dataset, predictions } = splitData(data, (_, name) => names.indexOf(name));
 
 let vectors = PCA.getEigenVectors(dataset);
+// console.log(dataset);
 // console.log(vectors);
-// for(let i = 0; i < vectors.length; i++)
-// 	console.log(i, PCA.computeAdjustedData(vectors, vectors[i]));
-let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).formattedAdjustedData;
+for(let i = 0; i < vectors.length; i++)
+	console.log(i, PCA.computePercentageExplained(vectors, vectors[i]));
+let adData = PCA.computeAdjustedData(dataset, vectors[0], vectors[1]).adjustedData;
 // console.log(adData);
 
 // let topTwo = PCA.computePercentageExplained(vectors, vectors[1]);
@@ -650,7 +652,7 @@ function predictPlaylist() { // Decision Tree Classifier
 		accuracy: g / testPrediction.length
 	};
 }
-console.log(predictPlaylist().headers);
+// console.log(predictPlaylist().headers);
 
 // let confusionMarix = crossValidation.kFold(DecisionTreeClassifier, dataset, predictions, {}, 5);
 // for(let i = 0; i < names.length; i++)
